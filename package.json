@@ -1,5 +1,5 @@
 {
-  "name": "nexus-frontend",
+  "name": "aura",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,14 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "14.2.5",
+    "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@tanstack/react-query": "^5.51.0",
-    "zustand": "^4.5.4",
-    "zod": "^3.23.8",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.408.0"
+    "clsx": "^2.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
