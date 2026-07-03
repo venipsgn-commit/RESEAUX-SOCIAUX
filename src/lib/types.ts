@@ -64,6 +64,25 @@ export type Profile = {
   created_at: string;
 };
 
+export type Conversation = {
+  conversation_id: string;
+  last_message_at: string;
+  other_id: string;
+  other_handle: string;
+  other_display_name: string;
+  other_avatar_emoji: string;
+  last_body: string | null;
+  last_sender_id: string | null;
+};
+
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
 export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)}m`;
   return `${(m / 1000).toFixed(1)}km`;

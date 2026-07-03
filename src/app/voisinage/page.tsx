@@ -197,8 +197,9 @@ export default async function VoisinagePage() {
                   Rejoindre
                 </Link>
               )}
-              <button aria-label="Likes" className="text-xl">❤️</button>
-              <button aria-label="Messages" className="text-xl">💬</button>
+              <Link href="/messages" aria-label="Messages" className="text-xl">
+                💬
+              </Link>
             </div>
           </div>
 

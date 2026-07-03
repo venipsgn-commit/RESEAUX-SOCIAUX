@@ -46,6 +46,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          <Link
+            href="/messages"
+            className={clsx(
+              'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition',
+              pathname.startsWith('/messages')
+                ? 'bg-ink-900 text-cream-50 shadow-soft'
+                : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
+            )}
+          >
+            <span className="text-2xl">💬</span>
+            <span>Messages</span>
+          </Link>
         </nav>
         <Link href="/profil" className="bg-sand-100 rounded-2xl p-4 hover:bg-sand-200 transition">
           <div className="flex items-center gap-3">

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Shell } from '@/components/Shell';
 import { ReactionBar } from '@/components/ReactionBar';
 import { DeletePostButton } from '@/components/DeletePostButton';
+import { ContactButton } from '@/components/ContactButton';
 import { createClient } from '@/lib/supabase/server';
 import { type PostDetail, POST_TYPE_META, formatPrice, timeAgo } from '@/lib/types';
 
@@ -129,9 +130,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                   🚶 M&apos;y rendre pour débloquer
                 </button>
               )}
-              <button className="w-full py-3 bg-ink-900 text-cream-50 rounded-full font-extrabold text-sm shadow-soft">
-                💬 Contacter {post.author_handle}
-              </button>
+              <ContactButton otherId={post.author_id} otherHandle={post.author_handle} />
             </div>
           )}
 
