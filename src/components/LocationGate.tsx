@@ -16,13 +16,35 @@ function writeCookie(pos: AuraPosition) {
   document.cookie = `${AURA_POS_COOKIE}=${serializePositionCookie(pos)}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
 }
 
-/**
- * Reverse-geocoding léger : on ne connaît pas le nom du quartier sans API
- * externe (bloquée ici), donc on affiche les coordonnées arrondies.
- * L'étape 4 (carte Mapbox) fournira le vrai nom de lieu.
- */
-function quartierLabel(lat: number, lng: number): string {
+/** Coordonnées arrondies (fallback si le reverse-geocoding échoue). */
+function coordsLabel(lat: number, lng: number): string {
   return `Ma position · ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+}
+
+/**
+ * Reverse-geocoding via Nominatim (OpenStreetMap) pour obtenir le nom du
+ * quartier. Gratuit, sans clé. En cas d'échec (réseau, quota), on retombe
+ * sur les coordonnées.
+ */
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
+      { headers: { 'Accept-Language': 'fr' } },
+    );
+    if (!res.ok) throw new Error('geocode failed');
+    const data = await res.json();
+    const a = data?.address ?? {};
+    const quartier =
+      a.neighbourhood || a.suburb || a.quarter || a.city_district || a.village || a.town;
+    const ville = a.city || a.town || a.municipality || a.county;
+    if (quartier && ville && quartier !== ville) return `${quartier} · ${ville}`;
+    if (quartier) return quartier;
+    if (ville) return ville;
+    return coordsLabel(lat, lng);
+  } catch {
+    return coordsLabel(lat, lng);
+  }
 }
 
 /**
@@ -60,16 +82,21 @@ export function LocationGate() {
     }
     setStatus('asking');
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        const pos: AuraPosition = {
+        // Écrit d'abord avec un label provisoire pour ne pas bloquer l'UI…
+        const provisional: AuraPosition = {
           lat: latitude,
           lng: longitude,
-          quartier: quartierLabel(latitude, longitude),
+          quartier: coordsLabel(latitude, longitude),
           real: true,
         };
-        writeCookie(pos);
+        writeCookie(provisional);
         setStatus('granted');
+        router.refresh();
+        // …puis complète avec le vrai nom de quartier
+        const quartier = await reverseGeocode(latitude, longitude);
+        writeCookie({ ...provisional, quartier });
         router.refresh();
       },
       () => {
