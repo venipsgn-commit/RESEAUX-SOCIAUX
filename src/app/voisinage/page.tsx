@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { createClient } from '@/lib/supabase/server';
-import { DEFAULT_POSITION, DEFAULT_RADIUS_M } from '@/lib/supabase/config';
+import { getServerPosition } from '@/lib/getServerPosition';
+import { DEFAULT_RADIUS_M } from '@/lib/location';
 import {
   type NearbyPost,
   POST_TYPE_META,
@@ -118,11 +119,12 @@ function PostCard({ post }: { post: NearbyPost }) {
 
 export default async function VoisinagePage() {
   const supabase = createClient();
+  const pos = getServerPosition();
 
   const [{ data: posts }, { data: userData }] = await Promise.all([
     supabase.rpc('posts_nearby', {
-      user_lat: DEFAULT_POSITION.lat,
-      user_lng: DEFAULT_POSITION.lng,
+      user_lat: pos.lat,
+      user_lng: pos.lng,
       radius_m: DEFAULT_RADIUS_M,
       max_results: 50,
     }),
@@ -149,13 +151,14 @@ export default async function VoisinagePage() {
               <div className="aura-logo" />
               <span className="text-xl font-black tracking-tight">aura</span>
               <span className="text-[11px] text-ink-700/50 font-semibold">
-                · {DEFAULT_POSITION.quartier.split(' · ')[0]}
+                · {pos.quartier.split(' · ')[0]}
               </span>
             </div>
             <div className="hidden lg:block">
               <h1 className="text-4xl font-black tracking-tight">Voisinage</h1>
               <p className="text-sm text-ink-700/60 mt-0.5">
-                {DEFAULT_POSITION.quartier} · {neighbors.length} voisins actifs dans ton aura
+                {pos.real ? '📍' : '🧭'} {pos.quartier} · {neighbors.length} voisins actifs dans ton
+                aura
               </p>
             </div>
             <div className="flex gap-3 items-center">
@@ -215,7 +218,9 @@ export default async function VoisinagePage() {
               <div className="text-5xl mb-3">🏜️</div>
               <p className="font-bold">Aucune activité dans ton aura pour l&apos;instant.</p>
               <p className="text-sm text-ink-700/60 mt-1">
-                Sois le premier à publier quelque chose dans ton quartier !
+                {pos.real
+                  ? 'Ton aura est calme — sois le premier à publier ! (Les voisins de démo sont autour de Bastille, Paris.)'
+                  : 'Sois le premier à publier quelque chose dans ton quartier !'}
               </p>
               <Link
                 href={user ? '/compose' : '/connexion'}

@@ -1,7 +1,26 @@
 import { Shell } from '@/components/Shell';
 import { MapCanvas } from '@/components/MapCanvas';
+import { createClient } from '@/lib/supabase/server';
+import { getServerPosition } from '@/lib/getServerPosition';
+import { DEFAULT_RADIUS_M } from '@/lib/location';
+import { type NearbyPost, formatDistance } from '@/lib/types';
 
-export default function MapPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function MapPage() {
+  const supabase = createClient();
+  const pos = getServerPosition();
+
+  const { data } = await supabase.rpc('posts_nearby', {
+    user_lat: pos.lat,
+    user_lng: pos.lng,
+    radius_m: DEFAULT_RADIUS_M,
+    max_results: 50,
+  });
+  const posts = (data ?? []) as NearbyPost[];
+  const nearest = posts[0] ?? null;
+  const neighborCount = new Set(posts.map((p) => p.author_id)).size;
+
   return (
     <Shell>
       <div className="relative h-[calc(100dvh-88px)] lg:h-screen">
@@ -10,10 +29,12 @@ export default function MapPage() {
         {/* TOP — location bar */}
         <div className="absolute top-3 left-3 right-3 lg:top-6 lg:left-6 lg:right-auto lg:w-96 z-30 flex gap-2 items-center animate-fade-up">
           <div className="bg-cream-50/95 backdrop-blur-xl rounded-full px-3 py-2 flex-1 flex items-center gap-2.5 shadow-soft">
-            <span className="text-base">📍</span>
+            <span className="text-base">{pos.real ? '📍' : '🧭'}</span>
             <div className="flex-1 min-w-0">
-              <div className="text-[9px] uppercase tracking-wider font-bold text-ink-700/50">Tu es à</div>
-              <div className="text-sm font-extrabold leading-tight">Bastille · Paris 11ᵉ</div>
+              <div className="text-[9px] uppercase tracking-wider font-bold text-ink-700/50">
+                {pos.real ? 'Tu es à' : 'Aperçu · démo'}
+              </div>
+              <div className="text-sm font-extrabold leading-tight truncate">{pos.quartier}</div>
             </div>
             <span className="text-xs text-ink-700/60 font-bold">▼</span>
           </div>
@@ -57,29 +78,43 @@ export default function MapPage() {
           </button>
         </div>
 
-        {/* BOTTOM SHEET — Lucas */}
-        <div className="absolute bottom-3 left-3 right-3 lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 z-30">
-          <div className="bg-cream-50/97 backdrop-blur-xl rounded-3xl p-3.5 shadow-lift border border-sunset-500/30 animate-fade-up">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lilac-400 to-lilac-500 flex items-center justify-center text-2xl border-2 border-white shadow-pin flex-shrink-0">
-                😊
+        {/* BOTTOM SHEET — voisin le plus proche (données réelles) */}
+        {nearest ? (
+          <div className="absolute bottom-3 left-3 right-3 lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 z-30">
+            <div className="bg-cream-50/97 backdrop-blur-xl rounded-3xl p-3.5 shadow-lift border border-sunset-500/30 animate-fade-up">
+              <div className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50 mb-2 px-1">
+                {neighborCount} voisins · {posts.length} posts dans ton aura
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-extrabold text-sm">Lucas</span>
-                  <span className="badge-merge">Aura tangente</span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lilac-400 to-lilac-500 flex items-center justify-center text-2xl border-2 border-white shadow-pin flex-shrink-0">
+                  {nearest.author_avatar_emoji}
                 </div>
-                <div className="text-[11px] text-ink-700/60">
-                  Architecte · à <b>73m</b> · Score{' '}
-                  <b className="text-forest-600">92</b>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-extrabold text-sm">{nearest.author_handle}</span>
+                    <span className="badge-merge">Le plus proche</span>
+                  </div>
+                  <div className="text-[11px] text-ink-700/60 truncate">
+                    {nearest.title} · à <b>{formatDistance(nearest.distance_m)}</b> · Score{' '}
+                    <b className="text-forest-600">{nearest.author_neighbor_score}</b>
+                  </div>
                 </div>
+                <button className="px-3 py-2 bg-ink-900 text-cream-50 rounded-full text-xs font-bold shadow-soft">
+                  👋 Saluer
+                </button>
               </div>
-              <button className="px-3 py-2 bg-ink-900 text-cream-50 rounded-full text-xs font-bold shadow-soft">
-                👋 Saluer
-              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="absolute bottom-3 left-3 right-3 lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 z-30">
+            <div className="bg-cream-50/97 backdrop-blur-xl rounded-3xl p-4 shadow-lift text-center animate-fade-up">
+              <div className="text-sm font-bold">Ton aura est calme 🍃</div>
+              <div className="text-[11px] text-ink-700/60 mt-0.5">
+                Aucun voisin dans 500m. Les voisins de démo sont autour de Bastille.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Shell>
   );

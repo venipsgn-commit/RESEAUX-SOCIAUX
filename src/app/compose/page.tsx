@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { Shell } from '@/components/Shell';
 import { createClient } from '@/lib/supabase/client';
-import { DEFAULT_POSITION } from '@/lib/supabase/config';
+import { getClientPosition } from '@/lib/location';
 import type { PostType } from '@/lib/types';
 
 const TYPES: { id: PostType; icon: string; label: string }[] = [
@@ -32,6 +32,11 @@ export default function ComposePage() {
   const [geolockHint, setGeolockHint] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quartier, setQuartier] = useState('Bastille');
+
+  useEffect(() => {
+    setQuartier(getClientPosition().quartier.split(' · ')[0]);
+  }, []);
 
   const withPrice = type === 'sell' || type === 'service';
 
@@ -52,6 +57,7 @@ export default function ComposePage() {
       }
 
       const priceCents = withPrice && price ? Math.round(parseFloat(price.replace(',', '.')) * 100) : null;
+      const pos = getClientPosition();
 
       const { error: insertError } = await supabase.from('posts').insert({
         author_id: user.id,
@@ -60,10 +66,10 @@ export default function ComposePage() {
         body: body.trim() || null,
         price_cents: priceCents,
         emoji,
-        lat: DEFAULT_POSITION.lat,
-        lng: DEFAULT_POSITION.lng,
-        geolock_lat: type === 'geolock' ? DEFAULT_POSITION.lat : null,
-        geolock_lng: type === 'geolock' ? DEFAULT_POSITION.lng : null,
+        lat: pos.lat,
+        lng: pos.lng,
+        geolock_lat: type === 'geolock' ? pos.lat : null,
+        geolock_lng: type === 'geolock' ? pos.lng : null,
         geolock_hint: type === 'geolock' ? geolockHint.trim() || null : null,
       });
       if (insertError) throw insertError;
@@ -216,7 +222,7 @@ export default function ComposePage() {
                 Visibilité
               </div>
               <div className="text-sm font-extrabold">
-                Aura · 500m · {DEFAULT_POSITION.quartier.split(' · ')[0]}
+                Aura · 500m · {quartier}
               </div>
             </div>
           </div>

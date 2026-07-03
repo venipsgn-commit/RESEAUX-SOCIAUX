@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { LocationGate } from './LocationGate';
 
 type TabDef = { href: string; label: string; icon: string };
 
@@ -61,6 +62,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* MAIN */}
       <main className="lg:pl-72 pb-[88px] lg:pb-0 min-h-[100dvh]">{children}</main>
+
+      {/* Bannière géolocalisation (invisible une fois la position choisie) */}
+      <LocationGate />
 
       {/* MOBILE BOTTOM TAB BAR */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-2 pt-3 pb-6 bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">

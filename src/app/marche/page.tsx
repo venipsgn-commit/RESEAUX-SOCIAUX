@@ -1,16 +1,18 @@
 import { Shell } from '@/components/Shell';
 import { createClient } from '@/lib/supabase/server';
-import { DEFAULT_POSITION, DEFAULT_RADIUS_M } from '@/lib/supabase/config';
+import { getServerPosition } from '@/lib/getServerPosition';
+import { DEFAULT_RADIUS_M } from '@/lib/location';
 import { type NearbyPost, POST_TYPE_META, formatDistance, formatPrice } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MarchePage() {
   const supabase = createClient();
+  const pos = getServerPosition();
 
   const { data } = await supabase.rpc('posts_nearby', {
-    user_lat: DEFAULT_POSITION.lat,
-    user_lng: DEFAULT_POSITION.lng,
+    user_lat: pos.lat,
+    user_lng: pos.lng,
     radius_m: DEFAULT_RADIUS_M,
     max_results: 100,
   });
