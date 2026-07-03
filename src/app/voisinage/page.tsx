@@ -39,25 +39,30 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
       <Link
         href={`/post/${post.id}`}
         className="block aspect-square relative"
-        style={{ background: meta.gradient }}
+        style={post.image_url && post.type !== 'geolock' ? undefined : { background: meta.gradient }}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-[120px]">
-          {post.type === 'geolock' ? (
-            <>
-              <div className="text-7xl opacity-50">🔒</div>
-              <p className="hand text-2xl text-ink-900 max-w-[260px] text-center leading-tight mt-2 px-4">
-                &quot;{post.body}&quot;
-              </p>
-              {post.geolock_hint && (
-                <div className="mt-3 px-3 py-1.5 bg-ink-900/85 backdrop-blur rounded-full text-white text-[11px] font-bold">
-                  📍 {post.geolock_hint}
-                </div>
-              )}
-            </>
-          ) : (
-            <span>{post.emoji}</span>
-          )}
-        </div>
+        {post.image_url && post.type !== 'geolock' ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.image_url} alt={post.title} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-[120px]">
+            {post.type === 'geolock' ? (
+              <>
+                <div className="text-7xl opacity-50">🔒</div>
+                <p className="hand text-2xl text-ink-900 max-w-[260px] text-center leading-tight mt-2 px-4">
+                  &quot;{post.body}&quot;
+                </p>
+                {post.geolock_hint && (
+                  <div className="mt-3 px-3 py-1.5 bg-ink-900/85 backdrop-blur rounded-full text-white text-[11px] font-bold">
+                    📍 {post.geolock_hint}
+                  </div>
+                )}
+              </>
+            ) : (
+              <span>{post.emoji}</span>
+            )}
+          </div>
+        )}
         <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full text-[10px] font-bold text-ink-900">
           🚶 {formatDistance(post.distance_m)}
         </div>

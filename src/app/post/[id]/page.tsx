@@ -53,9 +53,12 @@ export default async function PostPage({ params }: { params: { id: string } }) {
           {/* Visuel */}
           <div
             className="aspect-square rounded-3xl flex flex-col items-center justify-center text-[160px] relative overflow-hidden"
-            style={{ background: meta.gradient }}
+            style={post.image_url && post.type !== 'geolock' ? undefined : { background: meta.gradient }}
           >
-            {post.type === 'geolock' ? (
+            {post.image_url && post.type !== 'geolock' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.image_url} alt={post.title} className="absolute inset-0 w-full h-full object-cover" />
+            ) : post.type === 'geolock' ? (
               <>
                 <div className="text-8xl opacity-50">🔒</div>
                 {post.geolock_hint && (

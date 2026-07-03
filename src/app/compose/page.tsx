@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { Shell } from '@/components/Shell';
+import { ImageUpload } from '@/components/ImageUpload';
 import { createClient } from '@/lib/supabase/client';
 import { getClientPosition } from '@/lib/location';
-import type { PostType } from '@/lib/types';
+import { POST_TYPE_META, type PostType } from '@/lib/types';
 
 const TYPES: { id: PostType; icon: string; label: string }[] = [
   { id: 'sell', icon: '🛒', label: 'Vendre' },
@@ -29,6 +30,7 @@ export default function ComposePage() {
   const [body, setBody] = useState('');
   const [price, setPrice] = useState('');
   const [emoji, setEmoji] = useState('📦');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [geolockHint, setGeolockHint] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export default function ComposePage() {
         body: body.trim() || null,
         price_cents: priceCents,
         emoji,
+        image_url: imageUrl,
         lat: pos.lat,
         lng: pos.lng,
         geolock_lat: type === 'geolock' ? pos.lat : null,
@@ -129,26 +132,41 @@ export default function ComposePage() {
             </div>
           </div>
 
-          {/* Emoji picker (remplace l'upload photo — étape 6) */}
+          {/* Photo */}
           <div>
             <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mb-2">
-              Illustration
+              Photo
             </div>
-            <div className="bg-white rounded-2xl p-3 shadow-soft border border-ink-900/5 flex flex-wrap gap-1.5">
-              {EMOJIS.map((e) => (
-                <button
-                  key={e}
-                  onClick={() => setEmoji(e)}
-                  className={clsx(
-                    'w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition',
-                    emoji === e ? 'bg-sunset-300/50 ring-2 ring-sunset-500' : 'bg-sand-100',
-                  )}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
+            <ImageUpload
+              value={imageUrl}
+              onChange={setImageUrl}
+              fallbackEmoji={emoji}
+              gradient={POST_TYPE_META[type].gradient}
+            />
           </div>
+
+          {/* Emoji de secours (si pas de photo) */}
+          {!imageUrl && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mb-2">
+                Ou choisis un emoji
+              </div>
+              <div className="bg-white rounded-2xl p-3 shadow-soft border border-ink-900/5 flex flex-wrap gap-1.5">
+                {EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => setEmoji(e)}
+                    className={clsx(
+                      'w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition',
+                      emoji === e ? 'bg-sunset-300/50 ring-2 ring-sunset-500' : 'bg-sand-100',
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <div className="bg-white rounded-3xl p-4 shadow-soft border border-ink-900/5">

@@ -43,7 +43,7 @@ export default async function ProfilPage() {
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('posts')
-      .select('id, type, emoji, title, status')
+      .select('id, type, emoji, title, status, image_url')
       .eq('author_id', user.id)
       .order('created_at', { ascending: false }),
   ]);
@@ -162,11 +162,20 @@ export default async function ProfilPage() {
                   <Link
                     key={p.id}
                     href={`/post/${p.id}`}
-                    className="aspect-square rounded-md lg:rounded-lg flex items-center justify-center text-4xl lg:text-5xl hover:opacity-80 transition"
-                    style={{ background: POST_TYPE_META[p.type as PostType].gradient }}
+                    className="aspect-square rounded-md lg:rounded-lg flex items-center justify-center text-4xl lg:text-5xl hover:opacity-80 transition relative overflow-hidden"
+                    style={p.image_url ? undefined : { background: POST_TYPE_META[p.type as PostType].gradient }}
                     title={p.title}
                   >
-                    {p.emoji}
+                    {p.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.image_url}
+                        alt={p.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      p.emoji
+                    )}
                   </Link>
                 ))}
               </div>

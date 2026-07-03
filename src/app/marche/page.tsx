@@ -79,9 +79,18 @@ export default async function MarchePage() {
                 >
                   <div
                     className="aspect-square flex items-center justify-center text-[80px] relative"
-                    style={{ background: POST_TYPE_META[item.type].gradient }}
+                    style={item.image_url ? undefined : { background: POST_TYPE_META[item.type].gradient }}
                   >
-                    {item.emoji}
+                    {item.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      item.emoji
+                    )}
                     <div className="absolute top-2 left-2 bg-white px-2 py-0.5 rounded-full text-[10px] font-bold">
                       🚶 {formatDistance(item.distance_m)}
                     </div>
