@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
+import { ReactionBar } from '@/components/ReactionBar';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
 import { DEFAULT_RADIUS_M } from '@/lib/location';
@@ -13,7 +14,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-function PostCard({ post }: { post: NearbyPost }) {
+function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean }) {
   const meta = POST_TYPE_META[post.type];
   const price = formatPrice(post.price_cents);
 
@@ -35,25 +36,28 @@ function PostCard({ post }: { post: NearbyPost }) {
         </div>
       </div>
 
-      <div
-        className="aspect-square flex flex-col items-center justify-center text-[120px] relative"
+      <Link
+        href={`/post/${post.id}`}
+        className="block aspect-square relative"
         style={{ background: meta.gradient }}
       >
-        {post.type === 'geolock' ? (
-          <>
-            <div className="text-7xl opacity-50">🔒</div>
-            <p className="hand text-2xl text-ink-900 max-w-[260px] text-center leading-tight mt-2 px-4">
-              &quot;{post.body}&quot;
-            </p>
-            {post.geolock_hint && (
-              <div className="mt-3 px-3 py-1.5 bg-ink-900/85 backdrop-blur rounded-full text-white text-[11px] font-bold">
-                📍 {post.geolock_hint}
-              </div>
-            )}
-          </>
-        ) : (
-          <span>{post.emoji}</span>
-        )}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-[120px]">
+          {post.type === 'geolock' ? (
+            <>
+              <div className="text-7xl opacity-50">🔒</div>
+              <p className="hand text-2xl text-ink-900 max-w-[260px] text-center leading-tight mt-2 px-4">
+                &quot;{post.body}&quot;
+              </p>
+              {post.geolock_hint && (
+                <div className="mt-3 px-3 py-1.5 bg-ink-900/85 backdrop-blur rounded-full text-white text-[11px] font-bold">
+                  📍 {post.geolock_hint}
+                </div>
+              )}
+            </>
+          ) : (
+            <span>{post.emoji}</span>
+          )}
+        </div>
         <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full text-[10px] font-bold text-ink-900">
           🚶 {formatDistance(post.distance_m)}
         </div>
@@ -71,46 +75,54 @@ function PostCard({ post }: { post: NearbyPost }) {
             })}
           </div>
         )}
-      </div>
+      </Link>
 
-      <div className="px-4 pt-3 flex gap-4 items-center text-2xl">
-        <button aria-label="J'aime">♡</button>
-        <button aria-label="Commenter" className="text-xl">💬</button>
-        <button aria-label="Partager" className="text-xl">↗</button>
-        <div className="flex-1" />
-        <button aria-label="Enregistrer" className="text-xl">🔖</button>
+      <div className="px-4 pt-3">
+        <ReactionBar
+          postId={post.id}
+          initialLiked={likedByMe}
+          initialSaved={false}
+          initialLikeCount={post.like_count}
+        />
       </div>
       <div className="px-4 pb-4 pt-2">
-        <p className="text-sm">
+        <Link href={`/post/${post.id}`} className="text-sm block">
           <b>{post.author_handle}</b> {post.title}
-        </p>
+        </Link>
         {post.type !== 'geolock' && post.body && (
-          <p className="text-sm text-ink-700/70 mt-0.5">{post.body}</p>
+          <p className="text-sm text-ink-700/70 mt-0.5 line-clamp-2">{post.body}</p>
         )}
         {post.type === 'sell' && (
-          <>
-            <button className="mt-3 w-full py-2.5 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft">
-              Acheter en escrow
-            </button>
-            <div className="text-[10px] text-center text-ink-700/40 mt-2">
-              Commission 8% · payé seulement après livraison
-            </div>
-          </>
+          <Link
+            href={`/post/${post.id}`}
+            className="mt-3 block text-center w-full py-2.5 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft"
+          >
+            Acheter en escrow
+          </Link>
         )}
         {post.type === 'service' && (
-          <button className="mt-2 px-3 py-1.5 bg-coral-500 text-white rounded-full text-xs font-bold shadow-soft">
+          <Link
+            href={`/post/${post.id}`}
+            className="mt-2 inline-block px-3 py-1.5 bg-coral-500 text-white rounded-full text-xs font-bold shadow-soft"
+          >
             📅 Réserver
-          </button>
+          </Link>
         )}
         {post.type === 'event' && (
-          <button className="mt-2 w-full py-2.5 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft">
+          <Link
+            href={`/post/${post.id}`}
+            className="mt-2 block text-center w-full py-2.5 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft"
+          >
             Je viens 🙋
-          </button>
+          </Link>
         )}
         {post.type === 'geolock' && (
-          <button className="mt-2 w-full py-2.5 bg-gradient-to-br from-lilac-300 to-lilac-500 text-white rounded-full font-extrabold text-sm shadow-soft">
+          <Link
+            href={`/post/${post.id}`}
+            className="mt-2 block text-center w-full py-2.5 bg-gradient-to-br from-lilac-300 to-lilac-500 text-white rounded-full font-extrabold text-sm shadow-soft"
+          >
             🚶 M&apos;y rendre pour débloquer
-          </button>
+          </Link>
         )}
       </div>
     </article>
@@ -133,6 +145,21 @@ export default async function VoisinagePage() {
 
   const nearbyPosts = (posts ?? []) as NearbyPost[];
   const user = userData?.user ?? null;
+
+  // Posts déjà likés par l'utilisateur (pour préremplir les cœurs)
+  let likedIds = new Set<string>();
+  if (user && nearbyPosts.length > 0) {
+    const { data: myLikes } = await supabase
+      .from('reactions')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .eq('kind', 'like')
+      .in(
+        'post_id',
+        nearbyPosts.map((p) => p.id),
+      );
+    likedIds = new Set((myLikes ?? []).map((r) => r.post_id as string));
+  }
 
   // Voisins uniques pour la barre de stories
   const seen = new Set<string>();
@@ -232,7 +259,7 @@ export default async function VoisinagePage() {
           )}
 
           {nearbyPosts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} likedByMe={likedIds.has(post.id)} />
           ))}
 
           {nearbyPosts.length > 0 && (

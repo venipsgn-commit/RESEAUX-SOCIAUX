@@ -159,14 +159,15 @@ export default async function ProfilPage() {
             ) : (
               <div className="grid grid-cols-3 gap-1">
                 {posts.map((p) => (
-                  <div
+                  <Link
                     key={p.id}
-                    className="aspect-square rounded-md lg:rounded-lg flex items-center justify-center text-4xl lg:text-5xl"
+                    href={`/post/${p.id}`}
+                    className="aspect-square rounded-md lg:rounded-lg flex items-center justify-center text-4xl lg:text-5xl hover:opacity-80 transition"
                     style={{ background: POST_TYPE_META[p.type as PostType].gradient }}
                     title={p.title}
                   >
                     {p.emoji}
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

@@ -20,6 +20,33 @@ export type NearbyPost = {
   author_display_name: string;
   author_avatar_emoji: string;
   author_neighbor_score: number;
+  like_count: number;
+};
+
+export type PostDetail = {
+  id: string;
+  author_id: string;
+  type: PostType;
+  title: string;
+  body: string | null;
+  price_cents: number | null;
+  emoji: string;
+  image_url: string | null;
+  lat: number;
+  lng: number;
+  geolock_hint: string | null;
+  event_at: string | null;
+  status: string;
+  created_at: string;
+  author_handle: string;
+  author_display_name: string;
+  author_avatar_emoji: string;
+  author_neighbor_score: number;
+  author_bio: string | null;
+  like_count: number;
+  save_count: number;
+  viewer_liked: boolean;
+  viewer_saved: boolean;
 };
 
 export type Profile = {

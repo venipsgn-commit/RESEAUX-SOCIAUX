@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
@@ -71,8 +72,9 @@ export default async function MarchePage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {items.map((item) => (
-                <div
+                <Link
                   key={item.id}
+                  href={`/post/${item.id}`}
                   className="bg-white rounded-2xl overflow-hidden shadow-soft border border-ink-900/5 hover:shadow-lift transition cursor-pointer"
                 >
                   <div
@@ -94,7 +96,7 @@ export default async function MarchePage() {
                     <div className="text-xs font-bold text-ink-700/80 truncate">{item.title}</div>
                     <div className="text-[10px] text-ink-700/50 mt-0.5">@{item.author_handle}</div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
