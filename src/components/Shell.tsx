@@ -46,17 +46,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="bg-sand-100 rounded-2xl p-4">
+        <Link href="/profil" className="bg-sand-100 rounded-2xl p-4 hover:bg-sand-200 transition">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 text-white font-black flex items-center justify-center">
-              M
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 text-white flex items-center justify-center text-lg">
+              📍
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm truncate">Marie Dupont</div>
-              <div className="text-xs text-ink-700/60">@marie</div>
+              <div className="font-bold text-sm truncate">Mon profil</div>
+              <div className="text-xs text-ink-700/60">Compte & réglages</div>
             </div>
           </div>
-        </div>
+        </Link>
       </aside>
 
       {/* MAIN */}

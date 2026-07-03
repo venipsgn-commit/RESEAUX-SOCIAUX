@@ -1,21 +1,81 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Shell } from '@/components/Shell';
 import clsx from 'clsx';
+import { Shell } from '@/components/Shell';
+import { createClient } from '@/lib/supabase/client';
+import { DEFAULT_POSITION } from '@/lib/supabase/config';
+import type { PostType } from '@/lib/types';
 
-const TYPES = [
-  { id: 'sell', icon: '🛒', label: 'Vendre', color: 'sunset-500' },
-  { id: 'service', icon: '🛠', label: 'Service', color: 'coral-500' },
-  { id: 'event', icon: '🎉', label: 'Event', color: 'sage-400' },
-  { id: 'question', icon: '💬', label: 'Question', color: 'sky2-500' },
-  { id: 'geolock', icon: '🔮', label: 'Géo-verrou', color: 'lilac-500' },
-  { id: 'story', icon: '📸', label: 'Story', color: 'forest-500' },
-] as const;
+const TYPES: { id: PostType; icon: string; label: string }[] = [
+  { id: 'sell', icon: '🛒', label: 'Vendre' },
+  { id: 'service', icon: '🛠', label: 'Service' },
+  { id: 'event', icon: '🎉', label: 'Event' },
+  { id: 'question', icon: '💬', label: 'Question' },
+  { id: 'geolock', icon: '🔮', label: 'Géo-verrou' },
+  { id: 'story', icon: '📸', label: 'Story' },
+];
+
+const EMOJIS = ['📦', '🚲', '📱', '🪑', '👗', '📚', '🎸', '🌿', '🎨', '🥖', '🍷', '🌱', '🔧', '👶', '🐕', '💻'];
 
 export default function ComposePage() {
-  const [activeType, setActiveType] = useState<string>('sell');
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [type, setType] = useState<PostType>('sell');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [price, setPrice] = useState('');
+  const [emoji, setEmoji] = useState('📦');
+  const [geolockHint, setGeolockHint] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const withPrice = type === 'sell' || type === 'service';
+
+  async function publish() {
+    setError(null);
+    if (!title.trim()) {
+      setError('Il faut un titre.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/connexion');
+        return;
+      }
+
+      const priceCents = withPrice && price ? Math.round(parseFloat(price.replace(',', '.')) * 100) : null;
+
+      const { error: insertError } = await supabase.from('posts').insert({
+        author_id: user.id,
+        type,
+        title: title.trim(),
+        body: body.trim() || null,
+        price_cents: priceCents,
+        emoji,
+        lat: DEFAULT_POSITION.lat,
+        lng: DEFAULT_POSITION.lng,
+        geolock_lat: type === 'geolock' ? DEFAULT_POSITION.lat : null,
+        geolock_lng: type === 'geolock' ? DEFAULT_POSITION.lng : null,
+        geolock_hint: type === 'geolock' ? geolockHint.trim() || null : null,
+      });
+      if (insertError) throw insertError;
+
+      router.push('/voisinage');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la publication');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Shell>
@@ -25,8 +85,12 @@ export default function ComposePage() {
             ✕ Annuler
           </Link>
           <span className="text-sm font-extrabold">Nouveau post</span>
-          <button className="bg-ink-900 text-cream-50 px-4 py-2 rounded-full text-xs font-bold shadow-soft">
-            Publier
+          <button
+            onClick={publish}
+            disabled={loading}
+            className="bg-ink-900 text-cream-50 px-4 py-2 rounded-full text-xs font-bold shadow-soft disabled:opacity-50"
+          >
+            {loading ? '…' : 'Publier'}
           </button>
         </header>
 
@@ -39,19 +103,17 @@ export default function ComposePage() {
               {TYPES.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveType(t.id)}
+                  onClick={() => setType(t.id)}
                   className={clsx(
-                    'p-3 rounded-2xl shadow-soft text-center transition',
-                    activeType === t.id
-                      ? 'bg-white ring-2 ring-sunset-500'
-                      : 'bg-white text-ink-700/60',
+                    'p-3 rounded-2xl shadow-soft text-center transition bg-white',
+                    type === t.id && 'ring-2 ring-sunset-500',
                   )}
                 >
                   <div className="text-2xl">{t.icon}</div>
                   <div
                     className={clsx(
                       'text-[11px] font-bold mt-1',
-                      activeType === t.id ? 'text-ink-900' : 'text-ink-700/60',
+                      type === t.id ? 'text-ink-900' : 'text-ink-700/60',
                     )}
                   >
                     {t.label}
@@ -61,34 +123,88 @@ export default function ComposePage() {
             </div>
           </div>
 
-          {/* Photo zone */}
-          <div className="bg-gradient-to-br from-sky2-300 to-sky2-500 rounded-3xl aspect-square flex flex-col items-center justify-center text-white shadow-lift">
-            <div className="text-7xl">🚲</div>
-            <div className="mt-2 font-extrabold">+ Photo / vidéo</div>
-            <div className="text-xs opacity-80">tap pour changer</div>
+          {/* Emoji picker (remplace l'upload photo — étape 6) */}
+          <div>
+            <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mb-2">
+              Illustration
+            </div>
+            <div className="bg-white rounded-2xl p-3 shadow-soft border border-ink-900/5 flex flex-wrap gap-1.5">
+              {EMOJIS.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => setEmoji(e)}
+                  className={clsx(
+                    'w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition',
+                    emoji === e ? 'bg-sunset-300/50 ring-2 ring-sunset-500' : 'bg-sand-100',
+                  )}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Form */}
           <div className="bg-white rounded-3xl p-4 shadow-soft border border-ink-900/5">
             <input
-              defaultValue="VAE 25 km/h état impeccable"
-              placeholder="Titre du post…"
-              className="w-full text-base font-extrabold pb-2 border-b border-ink-900/8 outline-none bg-transparent"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={
+                type === 'sell'
+                  ? 'Ex : VAE 25 km/h état impeccable'
+                  : type === 'service'
+                    ? 'Ex : Cours de jardinage urbain (2h)'
+                    : type === 'event'
+                      ? "Ex : Apéro du quartier ce soir 19h"
+                      : type === 'geolock'
+                        ? 'Ex : Un secret t’attend'
+                        : 'Titre du post…'
+              }
+              maxLength={140}
+              className="w-full text-base font-extrabold pb-2 border-b border-ink-900/10 outline-none bg-transparent placeholder:text-ink-700/30"
             />
             <textarea
-              defaultValue="Batterie neuve, facture 2024. À venir chercher rue Sedaine."
-              placeholder="Décris ton objet…"
-              className="w-full mt-3 text-sm outline-none bg-transparent resize-none min-h-[80px]"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Décris ton post…"
+              maxLength={5000}
+              className="w-full mt-3 text-sm outline-none bg-transparent resize-none min-h-[80px] placeholder:text-ink-700/30"
             />
-            <div className="flex items-center gap-2 pt-3 border-t border-ink-900/6">
-              <span className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">PRIX</span>
-              <input
-                defaultValue="899"
-                className="text-2xl font-black w-24 outline-none bg-transparent"
-              />
-              <span className="text-2xl font-black">€</span>
-            </div>
+            {withPrice && (
+              <div className="flex items-center gap-2 pt-3 border-t border-ink-900/6">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">
+                  PRIX
+                </span>
+                <input
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="0"
+                  inputMode="decimal"
+                  className="text-2xl font-black w-24 outline-none bg-transparent placeholder:text-ink-700/20"
+                />
+                <span className="text-2xl font-black">€</span>
+              </div>
+            )}
+            {type === 'geolock' && (
+              <div className="pt-3 border-t border-ink-900/6">
+                <label className="text-[11px] uppercase tracking-wider font-bold text-lilac-500">
+                  🔮 Indice du lieu à visiter
+                </label>
+                <input
+                  value={geolockHint}
+                  onChange={(e) => setGeolockHint(e.target.value)}
+                  placeholder="Ex : Pont rue de Charonne"
+                  className="w-full text-sm font-semibold outline-none bg-transparent mt-1 placeholder:text-ink-700/30"
+                />
+              </div>
+            )}
           </div>
+
+          {error && (
+            <div className="bg-coral-400/10 border border-coral-400/30 rounded-2xl px-4 py-3 text-xs font-semibold text-coral-500">
+              {error}
+            </div>
+          )}
 
           {/* Visibility */}
           <div className="bg-gradient-to-br from-cream-50 to-sand-100 rounded-3xl p-4 flex items-center gap-3 border border-ink-900/5">
@@ -99,9 +215,10 @@ export default function ComposePage() {
               <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">
                 Visibilité
               </div>
-              <div className="text-sm font-extrabold">Aura · 500m</div>
+              <div className="text-sm font-extrabold">
+                Aura · 500m · {DEFAULT_POSITION.quartier.split(' · ')[0]}
+              </div>
             </div>
-            <button className="text-xs font-bold text-forest-600">Modifier ▸</button>
           </div>
         </div>
       </div>
