@@ -83,6 +83,19 @@ export type Message = {
   created_at: string;
 };
 
+export type NotifItem = {
+  id: string;
+  type: 'message' | 'like';
+  post_id: string | null;
+  conversation_id: string | null;
+  body: string | null;
+  read: boolean;
+  created_at: string;
+  actor_handle: string | null;
+  actor_display_name: string | null;
+  actor_avatar_emoji: string | null;
+};
+
 export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)}m`;
   return `${(m / 1000).toFixed(1)}km`;

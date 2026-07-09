@@ -1,5 +1,6 @@
 import { Shell } from '@/components/Shell';
 import { LiveMap, type MapPost } from '@/components/LiveMap';
+import { NotifBell } from '@/components/NotifBell';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
 import { DEFAULT_RADIUS_M } from '@/lib/location';
@@ -52,13 +53,7 @@ export default async function MapPage() {
             </div>
             <span className="text-xs text-ink-700/60 font-bold">▼</span>
           </div>
-          <button
-            aria-label="Notifications"
-            className="relative w-10 h-10 bg-cream-50/95 backdrop-blur-xl rounded-full shadow-soft flex items-center justify-center"
-          >
-            🔔
-            <span className="absolute top-2 right-2 w-2 h-2 bg-coral-500 rounded-full border-2 border-cream-50" />
-          </button>
+          <NotifBell variant="floating" />
         </div>
 
         {/* FILTERS */}
