@@ -1,6 +1,7 @@
 import { Shell } from '@/components/Shell';
 import { LiveMap, type MapPost } from '@/components/LiveMap';
 import { NotifBell } from '@/components/NotifBell';
+import { PresenceBeacon } from '@/components/PresenceBeacon';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
 import { DEFAULT_RADIUS_M } from '@/lib/location';
@@ -40,6 +41,9 @@ export default async function MapPage() {
           radiusM={DEFAULT_RADIUS_M}
           posts={mapPosts}
         />
+
+        {/* Présence live : voisins en ligne + aura tangente */}
+        <PresenceBeacon />
 
         {/* TOP — location bar */}
         <div className="absolute top-3 left-3 right-3 lg:top-6 lg:left-6 lg:right-auto lg:w-96 z-30 flex gap-2 items-center animate-fade-up">
