@@ -47,8 +47,19 @@ export default function ConnexionPage() {
           router.push('/voisinage');
           router.refresh();
         } else {
-          setInfo('Compte créé ! Vérifie tes emails pour confirmer ton adresse, puis connecte-toi.');
-          setMode('login');
+          // Pas de session renvoyée (confirmation email activée côté config) :
+          // l'email est auto-confirmé par un trigger, donc on se connecte direct.
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (signInError) {
+            setInfo('Compte créé ! Tu peux maintenant te connecter.');
+            setMode('login');
+          } else {
+            router.push('/voisinage');
+            router.refresh();
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
