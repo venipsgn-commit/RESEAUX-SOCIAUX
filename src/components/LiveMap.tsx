@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { createClient } from '@/lib/supabase/client';
 import { POST_TYPE_META, type PostType } from '@/lib/types';
 
 export type MapPost = {
@@ -14,10 +15,21 @@ export type MapPost = {
   lng: number;
 };
 
+export type MapPerson = {
+  user_id: string;
+  handle: string;
+  display_name: string;
+  avatar_emoji: string;
+  lat: number;
+  lng: number;
+  is_online: boolean;
+};
+
 type Props = {
   center: { lat: number; lng: number };
   radiusM: number;
   posts: MapPost[];
+  people?: MapPerson[];
   className?: string;
 };
 
@@ -44,10 +56,20 @@ function circlePolygon(lat: number, lng: number, radiusM: number, points = 64) {
   return coords;
 }
 
-export function LiveMap({ center, radiusM, posts, className = '' }: Props) {
+export function LiveMap({ center, radiusM, posts, people = [], className = '' }: Props) {
   const router = useRouter();
+  const supabase = createClient();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import('maplibre-gl').Map | null>(null);
+
+  async function sayHi(userId: string) {
+    const { data, error } = await supabase.rpc('get_or_create_dm', { other: userId });
+    if (error || !data) {
+      router.push('/connexion');
+      return;
+    }
+    router.push(`/messages/${data}`);
+  }
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -132,6 +154,31 @@ export function LiveMap({ center, radiusM, posts, className = '' }: Props) {
           });
           new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([post.lng, post.lat])
+            .addTo(map);
+        });
+
+        // ── Avatars des voisins (façon Snap Map) ──
+        people.forEach((person) => {
+          const firstName = person.display_name.split(' ')[0];
+          const el = document.createElement('button');
+          el.setAttribute('aria-label', person.display_name);
+          el.style.cssText =
+            'border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transform-origin:bottom center;transition:transform .2s;';
+          el.innerHTML = `
+            <div class="${person.is_online ? 'snap-online' : ''}" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#fdfaf5,#f5efe3);border:3px solid ${person.is_online ? '#2d5a3d' : '#fff'};box-shadow:0 6px 14px rgba(31,26,18,0.28);display:flex;align-items:center;justify-content:center;font-size:24px;">
+              ${person.avatar_emoji}
+            </div>
+            <div style="background:#1f1a12;color:#fdfaf5;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(31,26,18,0.2);">
+              ${firstName}${person.is_online ? ' 🟢' : ''}
+            </div>`;
+          el.addEventListener('mouseenter', () => (el.style.transform = 'scale(1.12) translateY(-3px)'));
+          el.addEventListener('mouseleave', () => (el.style.transform = 'scale(1)'));
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sayHi(person.user_id);
+          });
+          new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([person.lng, person.lat])
             .addTo(map);
         });
 

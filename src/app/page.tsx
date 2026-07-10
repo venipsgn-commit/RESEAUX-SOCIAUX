@@ -1,5 +1,5 @@
 import { Shell } from '@/components/Shell';
-import { LiveMap, type MapPost } from '@/components/LiveMap';
+import { LiveMap, type MapPost, type MapPerson } from '@/components/LiveMap';
 import { NotifBell } from '@/components/NotifBell';
 import { PresenceBeacon } from '@/components/PresenceBeacon';
 import { createClient } from '@/lib/supabase/server';
@@ -13,12 +13,19 @@ export default async function MapPage() {
   const supabase = createClient();
   const pos = getServerPosition();
 
-  const { data } = await supabase.rpc('posts_nearby', {
-    user_lat: pos.lat,
-    user_lng: pos.lng,
-    radius_m: DEFAULT_RADIUS_M,
-    max_results: 50,
-  });
+  const [{ data }, { data: peopleData }] = await Promise.all([
+    supabase.rpc('posts_nearby', {
+      user_lat: pos.lat,
+      user_lng: pos.lng,
+      radius_m: DEFAULT_RADIUS_M,
+      max_results: 50,
+    }),
+    supabase.rpc('people_nearby', {
+      user_lat: pos.lat,
+      user_lng: pos.lng,
+      radius_m: DEFAULT_RADIUS_M,
+    }),
+  ]);
   const posts = (data ?? []) as NearbyPost[];
   const nearest = posts[0] ?? null;
   const neighborCount = new Set(posts.map((p) => p.author_id)).size;
@@ -32,6 +39,8 @@ export default async function MapPage() {
     lng: p.lng,
   }));
 
+  const people = (peopleData ?? []) as MapPerson[];
+
   return (
     <Shell>
       <div className="relative h-[calc(100dvh-88px)] lg:h-screen">
@@ -40,6 +49,7 @@ export default async function MapPage() {
           center={{ lat: pos.lat, lng: pos.lng }}
           radiusM={DEFAULT_RADIUS_M}
           posts={mapPosts}
+          people={people}
         />
 
         {/* Présence live : voisins en ligne + aura tangente */}
