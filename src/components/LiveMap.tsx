@@ -82,12 +82,11 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       });
       mapRef.current = map;
 
-      // Tuiles CARTO Positron (CDN fiable, clair, image classique, sans clé)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
-        maxZoom: 20,
-        detectRetina: true,
-        attribution: '© OpenStreetMap © CARTO',
+      // Tuiles OpenStreetMap (image classique, sans WebGL, reachable partout)
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        crossOrigin: true,
+        attribution: '© OpenStreetMap',
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
