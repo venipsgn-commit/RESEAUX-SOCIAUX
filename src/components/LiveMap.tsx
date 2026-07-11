@@ -77,15 +77,28 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       const map = L.map(el, {
         center: [center.lat, center.lng],
         zoom: 16,
+        minZoom: 2,
         zoomControl: false,
         attributionControl: false,
+        worldCopyJump: false,
+        maxBounds: [
+          [-85, -180],
+          [85, 180],
+        ],
+        maxBoundsViscosity: 1,
       });
       mapRef.current = map;
 
       // Tuiles OpenStreetMap (image classique, sans WebGL, reachable partout)
+      // noWrap + bounds : le monde ne se répète pas quand on dézoome
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         crossOrigin: true,
+        noWrap: true,
+        bounds: [
+          [-85.06, -180],
+          [85.06, 180],
+        ],
         attribution: '© OpenStreetMap',
       }).addTo(map);
 
@@ -168,7 +181,7 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   }
 
   return (
-    <div className={className} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+    <div className={className} style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
       <div
         ref={containerRef}
         style={{
