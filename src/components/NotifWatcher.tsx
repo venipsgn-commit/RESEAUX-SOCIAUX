@@ -36,24 +36,35 @@ export function NotifWatcher() {
     return audioRef.current;
   }
 
-  function playChime() {
+  function alertUser() {
+    // Vibration (marche même si le son est coupé — surtout sur Android)
+    try {
+      navigator.vibrate?.([90, 40, 90]);
+    } catch {
+      /* pas de vibreur */
+    }
     const ctx = ensureCtx();
     if (!ctx) return;
+    // Sur mobile, le contexte se suspend en arrière-plan → on tente de le relancer
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    const notes = [880, 1174.7]; // La5 -> Ré6
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const t0 = ctx.currentTime + i * 0.14;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.3, t0 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + 0.34);
-    });
+    const play = () => {
+      const notes = [880, 1174.7]; // La5 -> Ré6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t0 = ctx.currentTime + i * 0.14;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.32, t0 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.34);
+      });
+    };
+    if (ctx.state === 'running') play();
+    else ctx.resume().then(play).catch(() => {});
   }
 
   useEffect(() => {
@@ -61,21 +72,41 @@ export function NotifWatcher() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Débloque l'audio au tout premier geste utilisateur (obligatoire)
+  // Débloque l'audio dès qu'on interagit, et le relance au retour au 1er plan.
+  // Sur mobile, on rejoue le déblocage à chaque geste (le contexte se resuspend).
   useEffect(() => {
     const unlock = () => {
-      if (unlockedRef.current) return;
-      unlockedRef.current = true;
       const ctx = ensureCtx();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (!unlockedRef.current) {
+        unlockedRef.current = true;
+        // iOS : jouer un buffer silencieux dans le geste débloque WebAudio
+        try {
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.start(0);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        audioRef.current?.resume?.().catch(() => {});
+      }
     };
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
-    window.addEventListener('touchstart', unlock);
+    window.addEventListener('touchend', unlock);
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
-      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('touchend', unlock);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 
@@ -89,7 +120,7 @@ export function NotifWatcher() {
         (payload) => {
           const type = (payload.new as { type?: string }).type ?? 'message';
           const meta = TOAST_BY_TYPE[type] ?? TOAST_BY_TYPE.message;
-          playChime();
+          alertUser();
           const id = performance.now();
           setToasts((t) => [...t, { id, icon: meta.icon, text: meta.text }]);
           setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4500);
