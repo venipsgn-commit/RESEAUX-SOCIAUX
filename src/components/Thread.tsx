@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { Message } from '@/lib/types';
 
@@ -15,17 +16,21 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const lastTypingSentRef = useRef(0);
+  const typingHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Scroll en bas à chaque nouveau message
+  // Scroll en bas à chaque nouveau message ou quand l'autre écrit
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, otherTyping]);
 
-  // Abonnement temps réel aux nouveaux messages de cette conversation
+  // Abonnement temps réel : nouveaux messages + événement "typing"
   useEffect(() => {
     const channel = supabase
-      .channel(`conv:${conversationId}`)
+      .channel(`conv:${conversationId}`, { config: { broadcast: { self: false } } })
       .on(
         'postgres_changes',
         {
@@ -37,15 +42,37 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
         (payload) => {
           const msg = payload.new as Message;
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          if (msg.sender_id !== meId) setOtherTyping(false);
         },
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (!payload || payload.userId === meId) return;
+        setOtherTyping(true);
+        if (typingHideRef.current) clearTimeout(typingHideRef.current);
+        typingHideRef.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
       .subscribe();
 
+    channelRef.current = channel;
     return () => {
+      if (typingHideRef.current) clearTimeout(typingHideRef.current);
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
+
+  // Prévient l'autre que j'écris (au plus une fois toutes les 1,2s)
+  function notifyTyping() {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1200) return;
+    lastTypingSentRef.current = now;
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId: meId },
+    });
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +100,7 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
     <div className="flex flex-col h-[calc(100dvh-88px-56px)] lg:h-[calc(100dvh-56px)]">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 lg:px-6 py-4 space-y-2">
-        {messages.length === 0 && (
+        {messages.length === 0 && !otherTyping && (
           <div className="text-center py-16 text-sm text-ink-700/50">
             👋 Dis bonjour à ton voisin.
           </div>
@@ -100,6 +127,18 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
             </div>
           );
         })}
+
+        {/* Indicateur "en train d'écrire" */}
+        {otherTyping && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-ink-900/5 shadow-soft rounded-3xl rounded-bl-lg px-4 py-3 flex items-center gap-1 text-ink-700/60">
+              <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+              <span className="typing-dot" style={{ animationDelay: '150ms' }} />
+              <span className="typing-dot" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
@@ -110,7 +149,10 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
       >
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            notifyTyping();
+          }}
           placeholder="Écris un message…"
           className="flex-1 bg-white rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/5 focus:ring-2 focus:ring-forest-500"
         />

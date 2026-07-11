@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { LocationGate } from './LocationGate';
+import { NotifWatcher } from './NotifWatcher';
 
 type TabDef = { href: string; label: string; icon: string };
 
@@ -113,6 +114,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Bannière géolocalisation (invisible une fois la position choisie) */}
       <LocationGate />
+
+      {/* Son + bandeau à l'arrivée d'une notification (global, toutes pages) */}
+      <NotifWatcher />
 
       {/* MOBILE BOTTOM TAB BAR */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-2 pt-3 pb-6 bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">

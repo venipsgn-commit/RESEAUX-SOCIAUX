@@ -21,6 +21,28 @@
   animation: snapPulse 2s ease-out infinite;
 }
 
+/* Indicateur "en train d'écrire" — trois points qui rebondissent */
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: typingBounce 1.2s infinite ease-in-out;
+}
+
 html,
 body {
   background: var(--paper);
