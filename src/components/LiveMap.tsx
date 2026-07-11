@@ -151,8 +151,11 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   }
 
   return (
-    <div className={`relative ${className}`}>
-      <div ref={containerRef} className="absolute inset-0" style={{ background: '#e8e6e1' }} />
+    <div className={className} style={{ position: 'absolute', inset: 0 }}>
+      <div
+        ref={containerRef}
+        style={{ position: 'absolute', inset: 0, height: '100%', width: '100%', background: '#e8e6e1' }}
+      />
       <button
         onClick={recenter}
         aria-label="Recentrer sur ma position"
