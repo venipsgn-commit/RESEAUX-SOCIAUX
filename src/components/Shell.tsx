@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { LocationGate } from './LocationGate';
 import { NotifWatcher } from './NotifWatcher';
+import { MessagesBadge } from './MessagesBadge';
 
 type TabDef = { href: string; label: string; icon: string };
 
@@ -79,7 +80,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
             )}
           >
-            <span className="text-2xl">💬</span>
+            <span className="relative text-2xl">
+              💬
+              <MessagesBadge />
+            </span>
             <span>Messages</span>
           </Link>
           <Link

@@ -73,6 +73,7 @@ export type Conversation = {
   other_avatar_emoji: string;
   last_body: string | null;
   last_sender_id: string | null;
+  unread_count: number;
 };
 
 export type Message = {

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { NotifBell } from '@/components/NotifBell';
+import { MessagesBadge } from '@/components/MessagesBadge';
 import { ReactionBar } from '@/components/ReactionBar';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
@@ -204,8 +205,9 @@ export default async function VoisinagePage() {
                 </Link>
               )}
               <NotifBell />
-              <Link href="/messages" aria-label="Messages" className="text-xl">
+              <Link href="/messages" aria-label="Messages" className="relative text-xl">
                 💬
+                <MessagesBadge />
               </Link>
             </div>
           </div>

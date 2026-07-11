@@ -27,6 +27,12 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, otherTyping]);
 
+  // Marque la conversation comme lue à l'ouverture (fait disparaître le badge)
+  useEffect(() => {
+    supabase.rpc('mark_conversation_read', { conv_id: conversationId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
   // Abonnement temps réel : nouveaux messages + événement "typing"
   useEffect(() => {
     const channel = supabase
@@ -42,7 +48,11 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
         (payload) => {
           const msg = payload.new as Message;
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-          if (msg.sender_id !== meId) setOtherTyping(false);
+          if (msg.sender_id !== meId) {
+            setOtherTyping(false);
+            // On lit en direct → on garde la conversation marquée comme lue
+            supabase.rpc('mark_conversation_read', { conv_id: conversationId });
+          }
         },
       )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
