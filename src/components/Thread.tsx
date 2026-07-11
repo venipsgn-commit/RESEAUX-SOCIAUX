@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import type { Message } from '@/lib/types';
+import type { Message, AttachmentType } from '@/lib/types';
 
 type Props = {
   conversationId: string;
@@ -11,29 +11,75 @@ type Props = {
   initialMessages: Message[];
 };
 
+/** Compresse une image côté client (max 1280px, JPEG 0.82). */
+async function compressImage(file: File): Promise<{ blob: Blob; contentType: string; ext: string }> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxSide = 1280;
+    let { width, height } = bitmap;
+    if (width > maxSide || height > maxSide) {
+      const r = Math.min(maxSide / width, maxSide / height);
+      width = Math.round(width * r);
+      height = Math.round(height * r);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.82));
+    if (blob) return { blob, contentType: 'image/jpeg', ext: 'jpg' };
+  } catch {
+    /* on retombe sur le fichier d'origine */
+  }
+  return { blob: file, contentType: file.type || 'image/jpeg', ext: 'jpg' };
+}
+
+function fmtTime(s: number) {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, '0')}`;
+}
+
 export function Thread({ conversationId, meId, initialMessages }: Props) {
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastTypingSentRef = useRef(0);
   const typingHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const cancelRecRef = useRef(false);
 
-  // Scroll en bas à chaque nouveau message ou quand l'autre écrit
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, otherTyping]);
 
-  // Marque la conversation comme lue à l'ouverture (fait disparaître le badge)
+  // Marque la conversation comme lue à l'ouverture
   useEffect(() => {
     supabase.rpc('mark_conversation_read', { conv_id: conversationId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Abonnement temps réel : nouveaux messages + événement "typing"
+  // Chrono d'enregistrement
+  useEffect(() => {
+    if (!recording) return;
+    setRecSecs(0);
+    const id = setInterval(() => setRecSecs((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [recording]);
+
+  // Temps réel : messages + "typing"
   useEffect(() => {
     const channel = supabase
       .channel(`conv:${conversationId}`, { config: { broadcast: { self: false } } })
@@ -50,7 +96,6 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
           if (msg.sender_id !== meId) {
             setOtherTyping(false);
-            // On lit en direct → on garde la conversation marquée comme lue
             supabase.rpc('mark_conversation_read', { conv_id: conversationId });
           }
         },
@@ -72,38 +117,115 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Prévient l'autre que j'écris (au plus une fois toutes les 1,2s)
   function notifyTyping() {
     const now = Date.now();
     if (now - lastTypingSentRef.current < 1200) return;
     lastTypingSentRef.current = now;
-    channelRef.current?.send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { userId: meId },
-    });
+    channelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: meId } });
   }
 
-  async function send(e: React.FormEvent) {
+  async function insertMessage(fields: Partial<Message>) {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({ conversation_id: conversationId, sender_id: meId, ...fields })
+      .select()
+      .single();
+    if (!error && data) {
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
+      return true;
+    }
+    return false;
+  }
+
+  async function sendText(e: React.FormEvent) {
     e.preventDefault();
     const body = draft.trim();
     if (!body || sending) return;
     setSending(true);
     setDraft('');
-
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({ conversation_id: conversationId, sender_id: meId, body })
-      .select()
-      .single();
-
-    if (!error && data) {
-      // Ajout immédiat (le realtime dédoublonne par id)
-      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
-    } else {
-      setDraft(body); // restaure en cas d'échec
-    }
+    const ok = await insertMessage({ body });
+    if (!ok) setDraft(body);
     setSending(false);
+  }
+
+  async function uploadAndSend(
+    blob: Blob,
+    type: AttachmentType,
+    ext: string,
+    contentType: string,
+    body?: string,
+  ) {
+    setErr(null);
+    setUploading(true);
+    try {
+      const path = `${meId}/${Date.now()}-${Math.round(performance.now())}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('message-media')
+        .upload(path, blob, { contentType, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from('message-media').getPublicUrl(path);
+      await insertMessage({ body: body ?? null, attachment_url: data.publicUrl, attachment_type: type });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Échec de l'envoi du média");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      setErr('Format non supporté (photo ou vidéo uniquement).');
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setErr('Fichier trop lourd (50 Mo max).');
+      return;
+    }
+    if (isImage) {
+      const { blob, contentType, ext } = await compressImage(file);
+      await uploadAndSend(blob, 'image', ext, contentType);
+    } else {
+      const ext = file.name.split('.').pop() || 'mp4';
+      await uploadAndSend(file, 'video', ext, file.type || 'video/mp4');
+    }
+  }
+
+  async function startRecording() {
+    setErr(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      cancelRecRef.current = false;
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (ev) => {
+        if (ev.data.size) chunksRef.current.push(ev.data);
+      };
+      mr.onstop = async () => {
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        if (cancelRecRef.current) return;
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        if (blob.size > 0) await uploadAndSend(blob, 'audio', 'webm', blob.type);
+      };
+      mr.start();
+      recorderRef.current = mr;
+      setRecording(true);
+    } catch {
+      setErr('Micro indisponible. Autorise le micro dans ton navigateur.');
+    }
+  }
+
+  function stopRecording(cancel: boolean) {
+    cancelRecRef.current = cancel;
+    recorderRef.current?.stop();
+    recorderRef.current = null;
+    setRecording(false);
   }
 
   return (
@@ -111,23 +233,53 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 lg:px-6 py-4 space-y-2">
         {messages.length === 0 && !otherTyping && (
-          <div className="text-center py-16 text-sm text-ink-700/50">
-            👋 Dis bonjour à ton voisin.
-          </div>
+          <div className="text-center py-16 text-sm text-ink-700/50">👋 Dis bonjour à ton voisin.</div>
         )}
         {messages.map((m) => {
           const mine = m.sender_id === meId;
+          const hasMedia = !!m.attachment_url;
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[78%] px-4 py-2.5 rounded-3xl text-sm ${
+                className={`max-w-[80%] text-sm ${
+                  hasMedia ? 'p-1.5' : 'px-4 py-2.5'
+                } rounded-3xl ${
                   mine
                     ? 'bg-ink-900 text-cream-50 rounded-br-lg'
                     : 'bg-white border border-ink-900/5 shadow-soft rounded-bl-lg'
                 }`}
               >
-                <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                <div className={`text-[9px] mt-1 ${mine ? 'text-cream-50/50' : 'text-ink-700/40'}`}>
+                {m.attachment_type === 'image' && m.attachment_url && (
+                  <a href={m.attachment_url} target="_blank" rel="noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.attachment_url}
+                      alt="photo"
+                      className="rounded-2xl max-h-72 w-auto max-w-full object-cover"
+                    />
+                  </a>
+                )}
+                {m.attachment_type === 'video' && m.attachment_url && (
+                  <video
+                    src={m.attachment_url}
+                    controls
+                    className="rounded-2xl max-h-72 max-w-full"
+                    preload="metadata"
+                  />
+                )}
+                {m.attachment_type === 'audio' && m.attachment_url && (
+                  <audio src={m.attachment_url} controls className="w-60 max-w-full h-10" />
+                )}
+                {m.body && (
+                  <div className={`whitespace-pre-wrap break-words ${hasMedia ? 'px-2 pt-1.5' : ''}`}>
+                    {m.body}
+                  </div>
+                )}
+                <div
+                  className={`text-[9px] ${hasMedia ? 'px-2 pb-1' : ''} mt-1 ${
+                    mine ? 'text-cream-50/50' : 'text-ink-700/40'
+                  }`}
+                >
                   {new Date(m.created_at).toLocaleTimeString('fr-FR', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -138,7 +290,6 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
           );
         })}
 
-        {/* Indicateur "en train d'écrire" */}
         {otherTyping && (
           <div className="flex justify-start">
             <div className="bg-white border border-ink-900/5 shadow-soft rounded-3xl rounded-bl-lg px-4 py-3 flex items-center gap-1 text-ink-700/60">
@@ -152,29 +303,85 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
         <div ref={bottomRef} />
       </div>
 
+      {err && (
+        <div className="px-4 py-2 text-[11px] text-coral-500 bg-coral-500/10 text-center">{err}</div>
+      )}
+
       {/* Composer */}
-      <form
-        onSubmit={send}
-        className="border-t border-ink-900/5 bg-cream-50/95 backdrop-blur-xl px-3 lg:px-6 py-3 flex items-center gap-2"
-      >
+      <div className="border-t border-ink-900/5 bg-cream-50/95 backdrop-blur-xl px-3 lg:px-6 py-3">
         <input
-          value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            notifyTyping();
-          }}
-          placeholder="Écris un message…"
-          className="flex-1 bg-white rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/5 focus:ring-2 focus:ring-forest-500"
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          onChange={onPickFile}
+          className="hidden"
         />
-        <button
-          type="submit"
-          disabled={!draft.trim() || sending}
-          className="w-10 h-10 rounded-full bg-forest-500 text-white flex items-center justify-center text-lg disabled:opacity-40"
-          aria-label="Envoyer"
-        >
-          ↑
-        </button>
-      </form>
+
+        {recording ? (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => stopRecording(true)}
+              aria-label="Annuler"
+              className="w-10 h-10 rounded-full bg-sand-200 text-ink-900 flex items-center justify-center text-lg"
+            >
+              ✕
+            </button>
+            <div className="flex-1 flex items-center gap-2 text-coral-500 font-bold text-sm">
+              <span className="w-3 h-3 rounded-full bg-coral-500 animate-pulse" />
+              Enregistrement… {fmtTime(recSecs)}
+            </div>
+            <button
+              onClick={() => stopRecording(false)}
+              aria-label="Envoyer le vocal"
+              className="w-10 h-10 rounded-full bg-forest-500 text-white flex items-center justify-center text-lg"
+            >
+              ↑
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={sendText} className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              aria-label="Envoyer une photo ou vidéo"
+              className="w-10 h-10 rounded-full bg-sand-100 text-ink-900 flex items-center justify-center text-lg flex-shrink-0 disabled:opacity-40 active:scale-95 transition"
+            >
+              📎
+            </button>
+            <input
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                notifyTyping();
+              }}
+              placeholder={uploading ? 'Envoi du média…' : 'Écris un message…'}
+              disabled={uploading}
+              className="flex-1 bg-white rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/5 focus:ring-2 focus:ring-forest-500 disabled:opacity-60"
+            />
+            {draft.trim() ? (
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-10 h-10 rounded-full bg-forest-500 text-white flex items-center justify-center text-lg disabled:opacity-40 flex-shrink-0"
+                aria-label="Envoyer"
+              >
+                ↑
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={startRecording}
+                disabled={uploading}
+                aria-label="Enregistrer un message vocal"
+                className="w-10 h-10 rounded-full bg-forest-500 text-white flex items-center justify-center text-lg disabled:opacity-40 flex-shrink-0 active:scale-95 transition"
+              >
+                🎤
+              </button>
+            )}
+          </form>
+        )}
+      </div>
     </div>
   );
 }

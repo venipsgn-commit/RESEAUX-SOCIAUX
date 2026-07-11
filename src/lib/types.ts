@@ -74,14 +74,19 @@ export type Conversation = {
   last_body: string | null;
   last_sender_id: string | null;
   unread_count: number;
+  last_attachment_type: AttachmentType | null;
 };
+
+export type AttachmentType = 'image' | 'video' | 'audio';
 
 export type Message = {
   id: string;
   conversation_id: string;
   sender_id: string;
-  body: string;
+  body: string | null;
   created_at: string;
+  attachment_url?: string | null;
+  attachment_type?: AttachmentType | null;
 };
 
 export type NotifType = 'message' | 'like' | 'comment';

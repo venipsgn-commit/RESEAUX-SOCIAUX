@@ -62,6 +62,15 @@ export default async function MessagesPage() {
               {conversations.map((c) => {
                 const mine = c.last_sender_id === user.id;
                 const unread = c.unread_count > 0;
+                const mediaLabel =
+                  c.last_attachment_type === 'image'
+                    ? '📷 Photo'
+                    : c.last_attachment_type === 'video'
+                      ? '🎥 Vidéo'
+                      : c.last_attachment_type === 'audio'
+                        ? '🎤 Message vocal'
+                        : null;
+                const preview = c.last_body || mediaLabel;
                 return (
                   <Link
                     key={c.conversation_id}
@@ -94,10 +103,10 @@ export default async function MessagesPage() {
                             unread ? 'text-ink-900 font-semibold' : 'text-ink-700/60'
                           }`}
                         >
-                          {c.last_body ? (
+                          {preview ? (
                             <>
                               {mine && <span className="text-ink-700/40 font-normal">Toi : </span>}
-                              {c.last_body}
+                              {preview}
                             </>
                           ) : (
                             <span className="italic text-ink-700/40">Nouvelle conversation</span>
