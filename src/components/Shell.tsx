@@ -46,7 +46,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="text-3xl font-black tracking-tight">aura</span>
         </Link>
         <nav className="flex flex-col gap-1 flex-1">
-          {TABS.map((t) => {
+          {/* Sur desktop, le profil est déjà accessible via la carte "Mon profil"
+              en bas de la sidebar → on retire la ligne "Profil" du menu ici
+              pour éviter le doublon (elle reste dans la tab bar mobile). */}
+          {TABS.filter((t) => t.href !== '/profil').map((t) => {
             const active = t.href === activeHref;
             return (
               <Link
