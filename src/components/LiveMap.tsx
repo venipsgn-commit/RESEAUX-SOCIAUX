@@ -168,10 +168,17 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   }
 
   return (
-    <div className={className} style={{ position: 'absolute', inset: 0 }}>
+    <div className={className} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       <div
         ref={containerRef}
-        style={{ position: 'absolute', inset: 0, height: '100%', width: '100%', background: '#e8e6e1' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          height: '100%',
+          width: '100%',
+          overflow: 'hidden',
+          background: '#e8e6e1',
+        }}
       />
       <button
         onClick={recenter}

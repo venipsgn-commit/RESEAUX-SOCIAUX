@@ -43,7 +43,7 @@ export default async function MapPage() {
 
   return (
     <Shell>
-      <div className="relative h-[calc(100dvh-88px)] lg:h-screen">
+      <div className="relative h-[calc(100dvh-88px)] lg:h-screen overflow-hidden">
         <LiveMap
           className="absolute inset-0"
           center={{ lat: pos.lat, lng: pos.lng }}
