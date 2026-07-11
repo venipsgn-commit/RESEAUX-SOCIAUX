@@ -58,14 +58,23 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   }
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (!containerRef.current) return;
     let cancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
 
     (async () => {
       const L = (await import('leaflet')).default;
-      if (cancelled || !containerRef.current) return;
+      const el = containerRef.current;
+      if (cancelled || !el) return;
 
-      const map = L.map(containerRef.current, {
+      // Nettoie une éventuelle instance résiduelle (navigation SPA)
+      if ((el as unknown as { _leaflet_id?: number })._leaflet_id) {
+        mapRef.current?.remove();
+        mapRef.current = null;
+      }
+      if (mapRef.current) return;
+
+      const map = L.map(el, {
         center: [center.lat, center.lng],
         zoom: 16,
         zoomControl: false,
@@ -73,13 +82,20 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       });
       mapRef.current = map;
 
-      // Tuiles OpenStreetMap (image classique, aucun WebGL, sans clé)
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap',
+      // Tuiles CARTO Positron (CDN fiable, clair, image classique, sans clé)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20,
+        detectRetina: true,
+        attribution: '© OpenStreetMap © CARTO',
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+      // Recalcule la taille dès que le conteneur apparaît/change (corrige la
+      // carte grise après une navigation SPA où le conteneur démarre à 0px)
+      resizeObserver = new ResizeObserver(() => map.invalidateSize());
+      resizeObserver.observe(el);
 
       // ── Aura (cercle de rayon réel) ──
       const auraCircle = L.circle([center.lat, center.lng], {
@@ -133,13 +149,15 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
           .on('click', () => sayHi(person.user_id));
       });
 
-      // Cadrage sur l'aura + resize (corrige les cartes grises en flex/absolute)
+      // Cadrage sur l'aura + resize répété (corrige les cartes grises quand le
+      // conteneur démarre à 0px, typiquement après une navigation SPA)
       map.fitBounds(auraCircle.getBounds(), { padding: [40, 40], maxZoom: 16 });
-      setTimeout(() => map.invalidateSize(), 200);
+      [50, 200, 500, 1000].forEach((ms) => setTimeout(() => map.invalidateSize(), ms));
     })();
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
     };
