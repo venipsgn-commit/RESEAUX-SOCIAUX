@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { LocationGate } from './LocationGate';
 
@@ -17,10 +18,27 @@ const TABS: TabDef[] = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const activeHref = TABS.find((t) => t.href === pathname)?.href ?? '/';
+  // Navigation optimiste : dès qu'on clique, on met en surbrillance la cible
+  // et on affiche la barre de progression, sans attendre le serveur.
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => setPending(null), [pathname]);
+
+  const current = pending ?? pathname;
+  const activeHref = TABS.find((t) => t.href === current)?.href ?? (current === '/' ? '/' : '');
+  const navigating = pending !== null && pending !== pathname;
+
+  const go = (href: string) => (href === pathname ? undefined : setPending(href));
 
   return (
     <div className="min-h-[100dvh] bg-cream-50 text-ink-900">
+      {/* Barre de progression de navigation */}
+      <div
+        aria-hidden
+        className={clsx(
+          'fixed top-0 left-0 h-0.5 z-[999] bg-gradient-to-r from-forest-500 to-sunset-500 transition-all duration-300 ease-out',
+          navigating ? 'w-4/5 opacity-100' : 'w-0 opacity-0',
+        )}
+      />
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-72 border-r border-ink-900/5 flex-col p-6 bg-cream-50 z-40">
         <Link href="/" className="flex items-center gap-3 mb-10">
@@ -34,8 +52,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Link
                 key={t.href}
                 href={t.href}
+                onClick={() => go(t.href)}
                 className={clsx(
-                  'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition',
+                  'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition active:scale-[0.98]',
                   active
                     ? 'bg-ink-900 text-cream-50 shadow-soft'
                     : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
@@ -48,9 +67,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           })}
           <Link
             href="/messages"
+            onClick={() => go('/messages')}
             className={clsx(
-              'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition',
-              pathname.startsWith('/messages')
+              'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition active:scale-[0.98]',
+              current.startsWith('/messages')
                 ? 'bg-ink-900 text-cream-50 shadow-soft'
                 : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
             )}
@@ -60,9 +80,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
           <Link
             href="/notifications"
+            onClick={() => go('/notifications')}
             className={clsx(
-              'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition',
-              pathname.startsWith('/notifications')
+              'flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-bold transition active:scale-[0.98]',
+              current.startsWith('/notifications')
                 ? 'bg-ink-900 text-cream-50 shadow-soft'
                 : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
             )}
@@ -100,8 +121,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={t.href}
                   href={t.href}
+                  onClick={() => go(t.href)}
                   aria-label="Publier"
-                  className="-mt-2 w-14 h-14 rounded-2xl text-white text-3xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin"
+                  className="-mt-2 w-14 h-14 rounded-2xl text-white text-3xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition"
                 >
                   ＋
                 </Link>
@@ -111,8 +133,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Link
                 key={t.href}
                 href={t.href}
+                onClick={() => go(t.href)}
                 className={clsx(
-                  'flex-1 h-12 flex flex-col items-center justify-center gap-0.5 transition',
+                  'flex-1 h-12 flex flex-col items-center justify-center gap-0.5 transition active:scale-95',
                   active ? 'text-ink-900' : 'text-ink-700/40',
                 )}
               >
