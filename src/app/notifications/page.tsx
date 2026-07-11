@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   message: { icon: '💬', verb: "t'a envoyé un message" },
   like: { icon: '❤️', verb: 'a aimé ton post' },
+  comment: { icon: '🗨️', verb: 'a commenté ton post' },
 };
 
 export default async function NotificationsPage() {
@@ -56,7 +57,7 @@ export default async function NotificationsPage() {
               <div className="text-5xl mb-3">🔕</div>
               <p className="font-bold">Rien de neuf.</p>
               <p className="text-sm text-ink-700/60 mt-1">
-                Tes likes et messages apparaîtront ici.
+                Tes likes, commentaires et messages apparaîtront ici.
               </p>
             </div>
           ) : (
@@ -88,7 +89,7 @@ export default async function NotificationsPage() {
                       </div>
                       {n.body && (
                         <div className="text-xs text-ink-700/55 truncate mt-0.5">
-                          {n.type === 'message' ? `« ${n.body} »` : n.body}
+                          {n.type === 'message' || n.type === 'comment' ? `« ${n.body} »` : n.body}
                         </div>
                       )}
                     </div>

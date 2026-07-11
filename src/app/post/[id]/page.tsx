@@ -4,6 +4,7 @@ import { Shell } from '@/components/Shell';
 import { ReactionBar } from '@/components/ReactionBar';
 import { DeletePostButton } from '@/components/DeletePostButton';
 import { ContactButton } from '@/components/ContactButton';
+import { Comments } from '@/components/Comments';
 import { createClient } from '@/lib/supabase/server';
 import { type PostDetail, POST_TYPE_META, formatPrice, timeAgo } from '@/lib/types';
 
@@ -145,6 +146,11 @@ export default async function PostPage({ params }: { params: { id: string } }) {
               <p className="text-sm text-ink-700/80">{post.author_bio}</p>
             </div>
           )}
+
+          {/* Commentaires */}
+          <div className="border-t border-ink-900/5 pt-4 pb-24 lg:pb-4">
+            <Comments postId={post.id} />
+          </div>
         </div>
       </div>
     </Shell>

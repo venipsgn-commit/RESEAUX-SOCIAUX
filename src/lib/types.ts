@@ -83,9 +83,11 @@ export type Message = {
   created_at: string;
 };
 
+export type NotifType = 'message' | 'like' | 'comment';
+
 export type NotifItem = {
   id: string;
-  type: 'message' | 'like';
+  type: NotifType;
   post_id: string | null;
   conversation_id: string | null;
   body: string | null;
@@ -94,6 +96,16 @@ export type NotifItem = {
   actor_handle: string | null;
   actor_display_name: string | null;
   actor_avatar_emoji: string | null;
+};
+
+export type CommentItem = {
+  id: string;
+  body: string;
+  created_at: string;
+  user_id: string;
+  handle: string | null;
+  display_name: string | null;
+  avatar_emoji: string | null;
 };
 
 export function formatDistance(m: number): string {
