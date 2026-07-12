@@ -18,14 +18,16 @@ export default async function ThreadPage({ params }: { params: { id: string } })
   // Membres de la conversation (RLS : renvoie vide si non membre)
   const { data: members } = await supabase
     .from('conversation_members')
-    .select('user_id')
+    .select('user_id, last_read_at')
     .eq('conversation_id', params.id);
 
   if (!members || members.length === 0) notFound();
   const isMember = members.some((m) => m.user_id === user.id);
   if (!isMember) notFound();
 
-  const otherId = members.find((m) => m.user_id !== user.id)?.user_id;
+  const otherMember = members.find((m) => m.user_id !== user.id);
+  const otherId = otherMember?.user_id;
+  const otherReadAt = (otherMember?.last_read_at as string | null) ?? null;
 
   const [{ data: otherProfile }, { data: msgs }] = await Promise.all([
     otherId
@@ -63,7 +65,12 @@ export default async function ThreadPage({ params }: { params: { id: string } })
           </div>
         </header>
 
-        <Thread conversationId={params.id} meId={user.id} initialMessages={initialMessages} />
+        <Thread
+          conversationId={params.id}
+          meId={user.id}
+          initialMessages={initialMessages}
+          initialOtherReadAt={otherReadAt}
+        />
       </div>
     </Shell>
   );

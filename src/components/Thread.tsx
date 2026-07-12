@@ -10,6 +10,7 @@ type Props = {
   conversationId: string;
   meId: string;
   initialMessages: Message[];
+  initialOtherReadAt?: string | null;
 };
 
 /** Compresse une image côté client (max 1280px, JPEG 0.82). */
@@ -41,7 +42,7 @@ function fmtTime(s: number) {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 
-export function Thread({ conversationId, meId, initialMessages }: Props) {
+export function Thread({ conversationId, meId, initialMessages, initialOtherReadAt }: Props) {
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
@@ -51,6 +52,7 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
   const [err, setErr] = useState<string | null>(null);
+  const [otherReadAt, setOtherReadAt] = useState<string | null>(initialOtherReadAt ?? null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -66,12 +68,6 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, otherTyping]);
 
-  // Marque la conversation comme lue à l'ouverture
-  useEffect(() => {
-    supabase.rpc('mark_conversation_read', { conv_id: conversationId });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId]);
-
   // Chrono d'enregistrement
   useEffect(() => {
     if (!recording) return;
@@ -80,7 +76,17 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
     return () => clearInterval(id);
   }, [recording]);
 
-  // Temps réel : messages + "typing"
+  // Marque lu (DB) + prévient l'autre que j'ai vu ("seen")
+  function markRead() {
+    supabase.rpc('mark_conversation_read', { conv_id: conversationId });
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'seen',
+      payload: { userId: meId, at: new Date().toISOString() },
+    });
+  }
+
+  // Temps réel : messages + "typing" + "seen"
   useEffect(() => {
     const channel = supabase
       .channel(`conv:${conversationId}`, { config: { broadcast: { self: false } } })
@@ -97,7 +103,7 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
           if (msg.sender_id !== meId) {
             setOtherTyping(false);
-            supabase.rpc('mark_conversation_read', { conv_id: conversationId });
+            markRead();
           }
         },
       )
@@ -107,7 +113,13 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
         if (typingHideRef.current) clearTimeout(typingHideRef.current);
         typingHideRef.current = setTimeout(() => setOtherTyping(false), 3000);
       })
-      .subscribe();
+      .on('broadcast', { event: 'seen' }, ({ payload }) => {
+        if (!payload || payload.userId === meId || !payload.at) return;
+        setOtherReadAt((prev) => (!prev || payload.at > prev ? payload.at : prev));
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') markRead();
+      });
 
     channelRef.current = channel;
     return () => {
@@ -202,7 +214,20 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       cancelRecRef.current = false;
-      const mr = new MediaRecorder(stream);
+      // On préfère mp4/AAC (lisible sur iOS ET Android). Chrome retombe sur webm.
+      const prefer = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+      let mime = '';
+      for (const t of prefer) {
+        try {
+          if (typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(t)) {
+            mime = t;
+            break;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       chunksRef.current = [];
       mr.ondataavailable = (ev) => {
         if (ev.data.size) chunksRef.current.push(ev.data);
@@ -211,8 +236,11 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
         if (cancelRecRef.current) return;
-        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
-        if (blob.size > 0) await uploadAndSend(blob, 'audio', 'webm', blob.type);
+        const type = mr.mimeType || mime || 'audio/webm';
+        const clean = type.split(';')[0];
+        const ext = clean.includes('mp4') ? 'm4a' : clean.includes('ogg') ? 'ogg' : 'webm';
+        const blob = new Blob(chunksRef.current, { type });
+        if (blob.size > 0) await uploadAndSend(blob, 'audio', ext, clean);
       };
       mr.start();
       recorderRef.current = mr;
@@ -290,6 +318,18 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
             </div>
           );
         })}
+
+        {(() => {
+          const mine = messages.filter((m) => m.sender_id === meId);
+          const last = mine[mine.length - 1];
+          if (!last || !otherReadAt) return null;
+          if (new Date(otherReadAt).getTime() < new Date(last.created_at).getTime()) return null;
+          return (
+            <div className="flex justify-end pr-1 -mt-1">
+              <span className="text-[10px] text-forest-600 font-semibold">Vu ✓✓</span>
+            </div>
+          );
+        })()}
 
         {otherTyping && (
           <div className="flex justify-start">

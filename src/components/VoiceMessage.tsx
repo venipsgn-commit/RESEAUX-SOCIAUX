@@ -40,28 +40,22 @@ export function VoiceMessage({ url, mine }: { url: string; mine: boolean }) {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    // Durée : on prend la valeur si elle est finie (pas d'astuce de seek qui
+    // casse la lecture sur Safari iOS). Certains .webm renvoient Infinity ;
+    // dans ce cas on affichera juste le temps écoulé pendant la lecture.
     const onMeta = () => {
-      // Contournement du bug webm/MediaRecorder (durée = Infinity)
-      if (!isFinite(a.duration) || isNaN(a.duration)) {
-        const fix = () => {
-          a.removeEventListener('timeupdate', fix);
-          a.currentTime = 0;
-          setDur(a.duration);
-        };
-        a.addEventListener('timeupdate', fix);
-        a.currentTime = 1e101;
-      } else {
-        setDur(a.duration);
-      }
+      if (isFinite(a.duration) && a.duration > 0) setDur(a.duration);
     };
     const onEnd = () => {
       setPlaying(false);
       setCur(0);
     };
     a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('durationchange', onMeta);
     a.addEventListener('ended', onEnd);
     return () => {
       a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('durationchange', onMeta);
       a.removeEventListener('ended', onEnd);
     };
   }, []);
