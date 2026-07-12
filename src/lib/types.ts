@@ -113,6 +113,10 @@ export type Reel = {
   handle: string | null;
   display_name: string | null;
   avatar_emoji: string | null;
+  like_count: number;
+  comment_count: number;
+  viewer_liked: boolean;
+  viewer_saved: boolean;
 };
 
 export type CommentItem = {
