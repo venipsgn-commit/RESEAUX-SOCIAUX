@@ -8,17 +8,18 @@ import { LocationGate } from './LocationGate';
 import { NotifWatcher } from './NotifWatcher';
 import { MessagesBadge } from './MessagesBadge';
 import { CallProvider } from './CallProvider';
+import { NavIcon, PlusIcon } from './NavIcons';
 
 type TabDef = { href: string; label: string; icon: string };
 
 const NAV = {
-  carte: { href: '/', label: 'Carte', icon: '🗺' },
-  voisinage: { href: '/voisinage', label: 'Voisinage', icon: '🏘' },
-  compose: { href: '/compose', label: 'Publier', icon: '＋' },
-  reels: { href: '/reels', label: 'Réels', icon: '🎬' },
-  messages: { href: '/messages', label: 'Messages', icon: '💬' },
-  profil: { href: '/profil', label: 'Profil', icon: '👤' },
-  marche: { href: '/marche', label: 'Marché', icon: '🛒' },
+  carte: { href: '/', label: 'Carte', icon: 'carte' },
+  voisinage: { href: '/voisinage', label: 'Voisinage', icon: 'voisinage' },
+  compose: { href: '/compose', label: 'Publier', icon: 'compose' },
+  reels: { href: '/reels', label: 'Réels', icon: 'reels' },
+  messages: { href: '/messages', label: 'Messages', icon: 'messages' },
+  profil: { href: '/profil', label: 'Profil', icon: 'profil' },
+  marche: { href: '/marche', label: 'Marché', icon: 'marche' },
 };
 
 // Mobile : ＋ au centre (index 3), un peu plus grand
@@ -81,7 +82,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
                 )}
               >
-                <span className="text-2xl">{t.icon}</span>
+                <span className="w-6 flex items-center justify-center">
+                  {t.icon === 'compose' ? (
+                    <PlusIcon size={24} />
+                  ) : (
+                    <NavIcon name={t.icon} active={active} size={24} />
+                  )}
+                </span>
                 <span>{t.label}</span>
               </Link>
             );
@@ -96,8 +103,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
             )}
           >
-            <span className="relative text-2xl">
-              💬
+            <span className="relative w-6 flex items-center justify-center">
+              <NavIcon name="messages" active={current.startsWith('/messages')} size={24} />
               <MessagesBadge />
             </span>
             <span>Messages</span>
@@ -112,7 +119,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 : 'text-ink-700/70 hover:bg-sand-100 hover:text-ink-900',
             )}
           >
-            <span className="text-2xl">🔔</span>
+            <span className="w-6 flex items-center justify-center">
+              <NavIcon name="notifications" active={current.startsWith('/notifications')} size={24} />
+            </span>
             <span>Notifications</span>
           </Link>
         </nav>
@@ -155,9 +164,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={t.href}
                   onClick={() => go(t.href)}
                   aria-label="Publier"
-                  className="-mt-6 mx-0.5 w-14 h-14 rounded-[18px] text-white text-3xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition flex-shrink-0 border-4 border-cream-50"
+                  className="-mt-6 mx-0.5 w-14 h-14 rounded-[18px] text-white flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition flex-shrink-0 border-4 border-cream-50"
                 >
-                  ＋
+                  <PlusIcon size={26} />
                 </Link>
               );
             }
@@ -166,24 +175,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 key={t.href}
                 href={t.href}
                 onClick={() => go(t.href)}
-                className="flex-1 min-w-0 flex flex-col items-center gap-0.5 pt-1 active:scale-95 transition"
+                aria-label={t.label}
+                className="flex-1 h-12 flex items-center justify-center active:scale-90 transition"
               >
                 <span
                   className={clsx(
-                    'relative w-10 h-7 rounded-2xl flex items-center justify-center text-[19px] leading-none transition-colors',
-                    active ? 'bg-forest-500/15 text-forest-600' : 'text-ink-700/45',
+                    'relative w-12 h-11 rounded-2xl flex items-center justify-center transition-colors',
+                    active ? 'bg-forest-500/15 text-forest-600' : 'text-ink-700/50',
                   )}
                 >
-                  {t.icon}
+                  <NavIcon name={t.icon} active={active} size={26} />
                   {t.href === '/messages' && <MessagesBadge />}
-                </span>
-                <span
-                  className={clsx(
-                    'text-[8.5px] font-extrabold tracking-tight leading-none',
-                    active ? 'text-forest-600' : 'text-ink-700/45',
-                  )}
-                >
-                  {t.label}
                 </span>
               </Link>
             );
