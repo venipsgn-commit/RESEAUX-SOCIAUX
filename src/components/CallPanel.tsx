@@ -68,6 +68,47 @@ function playRingTone(incoming: boolean) {
   }
 }
 
+const IconMic = ({ off = false, size = 24 }: { off?: boolean; size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="9" y="2.5" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0" />
+    <line x1="12" y1="18" x2="12" y2="21.5" />
+    {off && <line x1="4" y1="3.5" x2="20" y2="20.5" />}
+  </svg>
+);
+
+const IconVideo = ({ off = false, size = 24 }: { off?: boolean; size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2.5" y="6.5" width="12" height="11" rx="2.5" />
+    <path d="M14.8 10.6 21 7.5v9l-6.2-3" />
+    {off && <line x1="4" y1="3.5" x2="20" y2="20.5" />}
+  </svg>
+);
+
+const IconPhone = ({ size = 26, className = '' }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M6.6 10.8a15.6 15.6 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.05-.24 1.1.45 2.3.7 3.55.7.6 0 1 .45 1 1V20c0 .6-.4 1-1 1C10.85 21 3 13.15 3 3.9c0-.55.45-1 1-1h3.35c.55 0 1 .4 1 1 0 1.25.25 2.45.7 3.55.15.35.05.75-.24 1.05l-2.2 2.3z" />
+  </svg>
+);
+
 type Props = {
   conversationId: string;
   meId: string;
@@ -365,6 +406,20 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
 
   const inCall = phase !== 'idle';
   const showVideo = type === 'video' && (phase === 'connected' || phase === 'connecting');
+  const ctrl = (active: boolean) =>
+    `w-14 h-14 rounded-full flex items-center justify-center transition active:scale-90 backdrop-blur-md border ${
+      active ? 'bg-cream-50 text-ink-900 border-transparent' : 'bg-cream-50/15 text-cream-50 border-cream-50/15'
+    }`;
+  const statusText =
+    phase === 'outgoing'
+      ? 'Sonnerie…'
+      : phase === 'incoming'
+        ? 'vous appelle'
+        : phase === 'connecting'
+          ? 'Connexion…'
+          : phase === 'connected'
+            ? fmt(secs)
+            : '';
 
   return (
     <>
@@ -373,117 +428,143 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
         onClick={() => startCall('audio')}
         disabled={inCall}
         aria-label="Appel audio"
-        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center text-base disabled:opacity-40 active:scale-95 transition"
+        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center disabled:opacity-40 active:scale-90 hover:bg-forest-500/20 transition"
       >
-        📞
+        <IconPhone size={17} />
       </button>
       <button
         onClick={() => startCall('video')}
         disabled={inCall}
         aria-label="Appel vidéo"
-        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center text-base disabled:opacity-40 active:scale-95 transition"
+        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center disabled:opacity-40 active:scale-90 hover:bg-forest-500/20 transition"
       >
-        🎥
+        <IconVideo size={18} />
       </button>
 
       {inCall && (
         <div
-          className="fixed inset-0 z-[999] bg-ink-900 text-cream-50 flex flex-col"
+          className="fixed inset-0 z-[999] text-cream-50 select-none animate-fade-up"
           onClick={() => remoteRef.current?.play().catch(() => {})}
         >
-          {/* Vidéo distante = source du son ET de l'image (jamais cachée ni
-              muette, sinon iOS Safari ne joue pas le son de l'appel). En appel
-              audio, c'est un fond noir derrière l'avatar. */}
+          {/* Fond : dégradé aura (audio) ou noir (vidéo) */}
+          <div
+            className={`absolute inset-0 ${
+              showVideo
+                ? 'bg-ink-900'
+                : 'bg-[radial-gradient(circle_at_50%_22%,#31674a_0%,#1b2e21_50%,#100e0a_100%)]'
+            }`}
+          />
+
+          {/* Vidéo distante : image (visio) + son (toujours actif, invisible en audio) */}
           <video
             ref={remoteRef}
             autoPlay
             playsInline
-            className={`absolute inset-0 w-full h-full ${showVideo ? 'object-cover' : 'opacity-0'}`}
-          />
-
-          {/* Vidéo locale (PiP) */}
-          <video
-            ref={localRef}
-            autoPlay
-            playsInline
-            muted
-            className={`absolute top-4 right-4 w-28 h-40 object-cover rounded-2xl border-2 border-cream-50/30 shadow-lift z-10 ${
-              type === 'video' && !camOff ? '' : 'hidden'
+            className={`absolute inset-0 w-full h-full ${
+              showVideo ? 'object-cover' : 'opacity-0 pointer-events-none'
             }`}
           />
 
-          {/* Voile + infos (toujours pour audio, en overlay léger pour vidéo) */}
-          <div
-            className={`relative flex-1 flex flex-col items-center justify-center gap-4 px-6 ${
-              showVideo ? 'bg-gradient-to-b from-ink-900/60 to-transparent to-40%' : ''
-            }`}
-          >
-            {!showVideo && (
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-6xl shadow-pin">
-                {otherAvatar}
+          {/* Voiles pour la lisibilité en visio */}
+          {showVideo && (
+            <>
+              <div className="absolute top-0 inset-x-0 h-44 bg-gradient-to-b from-ink-900/75 to-transparent" />
+              <div className="absolute bottom-0 inset-x-0 h-60 bg-gradient-to-t from-ink-900/85 to-transparent" />
+            </>
+          )}
+
+          {/* Caméra locale (PiP) */}
+          {type === 'video' && !camOff && phase !== 'incoming' && (
+            <video
+              ref={localRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute top-5 right-4 w-24 h-36 sm:w-28 sm:h-40 object-cover rounded-2xl border border-cream-50/25 shadow-lift z-20 bg-ink-900"
+            />
+          )}
+
+          {/* Haut : identité + statut */}
+          <div className="absolute top-0 inset-x-0 z-10 pt-[env(safe-area-inset-top)]">
+            <div className="pt-8 px-6 text-center">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-cream-50/60 font-bold">
+                {type === 'video' ? 'Appel vidéo' : 'Appel audio'}
               </div>
-            )}
-            <div className={`text-center ${showVideo ? 'absolute top-6 left-0 right-0' : ''}`}>
-              <div className="text-2xl font-black">{otherName}</div>
-              <div className="text-sm text-cream-50/70 mt-1">
-                {phase === 'outgoing' && 'Appel en cours…'}
-                {phase === 'incoming' && `Appel ${type === 'video' ? 'vidéo' : 'audio'} entrant…`}
-                {phase === 'connecting' && 'Connexion…'}
-                {phase === 'connected' && fmt(secs)}
+              <div className="text-[26px] font-black leading-tight mt-1.5 [text-wrap:balance]">
+                {otherName}
               </div>
-              {err && <div className="text-xs text-coral-500 mt-2">{err}</div>}
+              <div className="text-sm text-cream-50/75 mt-1 tabular-nums min-h-[20px]">
+                {statusText}
+              </div>
+              {err && (
+                <div className="text-xs text-sunset-300 mt-2 max-w-xs mx-auto leading-snug">{err}</div>
+              )}
             </div>
           </div>
 
-          {/* Contrôles */}
-          <div className="relative z-10 pb-10 pt-4 flex items-center justify-center gap-5">
+          {/* Centre (audio) : avatar avec halo pulsant */}
+          {!showVideo && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative flex items-center justify-center">
+                {phase !== 'connected' && (
+                  <>
+                    <span className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40" />
+                    <span
+                      className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40"
+                      style={{ animationDelay: '1.3s' }}
+                    />
+                  </>
+                )}
+                <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-forest-300 to-forest-600 flex items-center justify-center text-7xl border border-cream-50/10 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)]">
+                  {otherAvatar}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bas : contrôles */}
+          <div className="absolute bottom-0 inset-x-0 z-20 pb-[calc(env(safe-area-inset-bottom)+30px)] pt-4">
             {phase === 'incoming' ? (
-              <>
-                <button
-                  onClick={rejectCall}
-                  aria-label="Refuser"
-                  className="w-16 h-16 rounded-full bg-coral-500 flex items-center justify-center text-3xl shadow-lift active:scale-95 transition"
-                >
-                  ✕
-                </button>
-                <button
-                  onClick={acceptCall}
-                  aria-label="Accepter"
-                  className="w-16 h-16 rounded-full bg-forest-500 flex items-center justify-center text-3xl shadow-lift active:scale-95 transition animate-pulse"
-                >
-                  {type === 'video' ? '🎥' : '📞'}
-                </button>
-              </>
+              <div className="flex items-start justify-center gap-16">
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={rejectCall}
+                    aria-label="Refuser"
+                    className="w-16 h-16 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
+                  >
+                    <IconPhone className="rotate-[135deg]" />
+                  </button>
+                  <span className="text-xs text-cream-50/70 font-semibold">Refuser</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={acceptCall}
+                    aria-label="Accepter"
+                    className="w-16 h-16 rounded-full bg-forest-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition animate-pulse"
+                  >
+                    <IconPhone />
+                  </button>
+                  <span className="text-xs text-cream-50/70 font-semibold">Accepter</span>
+                </div>
+              </div>
             ) : (
-              <>
-                <button
-                  onClick={toggleMute}
-                  aria-label="Micro"
-                  className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-soft active:scale-95 transition ${
-                    muted ? 'bg-cream-50 text-ink-900' : 'bg-cream-50/15 text-cream-50'
-                  }`}
-                >
-                  {muted ? '🔇' : '🎙️'}
+              <div className="flex items-center justify-center gap-5">
+                <button onClick={toggleMute} aria-label="Micro" className={ctrl(muted)}>
+                  <IconMic off={muted} />
                 </button>
                 {type === 'video' && (
-                  <button
-                    onClick={toggleCam}
-                    aria-label="Caméra"
-                    className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-soft active:scale-95 transition ${
-                      camOff ? 'bg-cream-50 text-ink-900' : 'bg-cream-50/15 text-cream-50'
-                    }`}
-                  >
-                    {camOff ? '📷' : '🎥'}
+                  <button onClick={toggleCam} aria-label="Caméra" className={ctrl(camOff)}>
+                    <IconVideo off={camOff} />
                   </button>
                 )}
                 <button
                   onClick={() => endCall(true)}
                   aria-label="Raccrocher"
-                  className="w-16 h-16 rounded-full bg-coral-500 flex items-center justify-center text-3xl shadow-lift active:scale-95 transition"
+                  className="w-[68px] h-[68px] rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
                 >
-                  📵
+                  <IconPhone size={28} className="rotate-[135deg]" />
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

@@ -21,6 +21,24 @@
   animation: snapPulse 2s ease-out infinite;
 }
 
+/* Halo pulsant derrière l'avatar pendant un appel */
+@keyframes callAura {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  70% {
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+.call-aura {
+  animation: callAura 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* Indicateur "en train d'écrire" — trois points qui rebondissent */
 @keyframes typingBounce {
   0%,
