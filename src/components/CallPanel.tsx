@@ -7,21 +7,31 @@ import { createClient } from '@/lib/supabase/client';
 type CallType = 'audio' | 'video';
 type Phase = 'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected';
 
-// STUN (Google) + TURN public (Open Relay) pour traverser les réseaux mobiles/4G.
+// STUN (Google) + TURN. Un vrai serveur TURN (relais) est indispensable pour
+// que l'appel passe sur les réseaux mobiles/4G. On peut en brancher un fiable
+// via les variables d'environnement NEXT_PUBLIC_TURN_URL / _USERNAME / _CREDENTIAL.
 const ICE_SERVERS: RTCIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
   {
-    urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443'],
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
+    urls: [
+      'stun:stun.l.google.com:19302',
+      'stun:stun1.l.google.com:19302',
+      'stun:stun2.l.google.com:19302',
+    ],
   },
   {
-    urls: 'turns:openrelay.metered.ca:443',
+    urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'],
     username: 'openrelayproject',
     credential: 'openrelayproject',
   },
 ];
+
+if (process.env.NEXT_PUBLIC_TURN_URL) {
+  ICE_SERVERS.push({
+    urls: process.env.NEXT_PUBLIC_TURN_URL.split(','),
+    username: process.env.NEXT_PUBLIC_TURN_USERNAME || '',
+    credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL || '',
+  });
+}
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -131,6 +141,15 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     };
   }, [phase]);
 
+  // Message d'aide si la connexion tarde (souvent un souci de réseau/TURN)
+  useEffect(() => {
+    if (phase !== 'connecting' && phase !== 'outgoing') return;
+    const id = setTimeout(() => {
+      setErr('La connexion tarde… Si rien ne vient, essayez en Wi-Fi des deux côtés.');
+    }, 18000);
+    return () => clearTimeout(id);
+  }, [phase]);
+
   function send(data: Record<string, unknown>) {
     chanRef.current?.send({ type: 'broadcast', event: 'signal', payload: { ...data, from: meId } });
   }
@@ -155,13 +174,25 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
       remoteStreamRef.current.addTrack(e.track);
       attachRemote();
     };
+    const markConnected = () => {
+      setErr(null);
+      setPhase('connected');
+      remoteRef.current?.play().catch(() => {});
+    };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
-      if (st === 'connected') {
-        setPhase('connected');
-        remoteRef.current?.play().catch(() => {});
-      } else if (st === 'failed') {
-        setErr('Connexion impossible (réseau).');
+      if (st === 'connected') markConnected();
+      else if (st === 'failed') {
+        setErr('Connexion impossible sur ce réseau. Essaie en Wi-Fi.');
+        endCall(false);
+      }
+    };
+    // Filet de sécurité (Safari met parfois à jour iceConnectionState en premier)
+    pc.oniceconnectionstatechange = () => {
+      const st = pc.iceConnectionState;
+      if (st === 'connected' || st === 'completed') markConnected();
+      else if (st === 'failed') {
+        setErr('Connexion impossible sur ce réseau. Essaie en Wi-Fi.');
         endCall(false);
       }
     };
