@@ -21,10 +21,11 @@ const NAV = {
   marche: { href: '/marche', label: 'Marché', icon: '🛒' },
 };
 
-// Mobile : 6 icônes 🗺 🏘 ➕ 🎬 💬 👤 (Marché via raccourci)
+// Mobile : ＋ au centre (index 3), un peu plus grand
 const MOBILE_TABS: TabDef[] = [
   NAV.carte,
   NAV.voisinage,
+  NAV.marche,
   NAV.compose,
   NAV.reels,
   NAV.messages,
@@ -138,8 +139,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <NotifWatcher />
 
       {/* MOBILE BOTTOM TAB BAR */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-2 pt-3 pb-6 bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">
-        <div className="flex items-center justify-around">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1.5 pt-2 pb-[max(env(safe-area-inset-bottom),16px)] bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">
+        <div className="flex items-end justify-around">
           {MOBILE_TABS.map((t) => {
             const active = isActive(t.href);
             if (t.href === '/compose') {
@@ -149,7 +150,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={t.href}
                   onClick={() => go(t.href)}
                   aria-label="Publier"
-                  className="-mt-2 w-12 h-12 rounded-2xl text-white text-2xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition flex-shrink-0"
+                  className="-mt-6 mx-0.5 w-14 h-14 rounded-[18px] text-white text-3xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition flex-shrink-0 border-4 border-cream-50"
                 >
                   ＋
                 </Link>
@@ -160,16 +161,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 key={t.href}
                 href={t.href}
                 onClick={() => go(t.href)}
-                className={clsx(
-                  'flex-1 h-12 flex flex-col items-center justify-center gap-0.5 transition active:scale-95',
-                  active ? 'text-ink-900' : 'text-ink-700/40',
-                )}
+                className="flex-1 min-w-0 flex flex-col items-center gap-0.5 pt-1 active:scale-95 transition"
               >
-                <span className="relative text-[21px] leading-none">
+                <span
+                  className={clsx(
+                    'relative w-10 h-7 rounded-2xl flex items-center justify-center text-[19px] leading-none transition-colors',
+                    active ? 'bg-forest-500/15 text-forest-600' : 'text-ink-700/45',
+                  )}
+                >
                   {t.icon}
                   {t.href === '/messages' && <MessagesBadge />}
                 </span>
-                <span className="text-[9px] font-bold uppercase tracking-wider">{t.label}</span>
+                <span
+                  className={clsx(
+                    'text-[8.5px] font-extrabold tracking-tight leading-none',
+                    active ? 'text-forest-600' : 'text-ink-700/45',
+                  )}
+                >
+                  {t.label}
+                </span>
               </Link>
             );
           })}
