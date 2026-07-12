@@ -81,7 +81,6 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
   const iceBufferRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteRef = useRef<HTMLVideoElement>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localRef = useRef<HTMLVideoElement>(null);
 
   // Signalisation via Realtime broadcast
@@ -138,16 +137,11 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
 
   function attachRemote() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
-    const s = remoteStreamRef.current;
-    // Le son est joué par un <audio> dédié (fiable même en appel audio) ;
-    // la <video> distante est muette et ne sert qu'à l'image.
+    // Le son ET l'image passent par l'élément <video playsinline> non-muet
+    // (seul moyen fiable de jouer le son WebRTC sur iOS Safari, même en audio).
     if (remoteRef.current) {
-      remoteRef.current.srcObject = s;
+      remoteRef.current.srcObject = remoteStreamRef.current;
       remoteRef.current.play().catch(() => {});
-    }
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = s;
-      remoteAudioRef.current.play().catch(() => {});
     }
   }
 
@@ -163,8 +157,10 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
-      if (st === 'connected') setPhase('connected');
-      else if (st === 'failed') {
+      if (st === 'connected') {
+        setPhase('connected');
+        remoteRef.current?.play().catch(() => {});
+      } else if (st === 'failed') {
         setErr('Connexion impossible (réseau).');
         endCall(false);
       }
@@ -360,17 +356,18 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
       </button>
 
       {inCall && (
-        <div className="fixed inset-0 z-[999] bg-ink-900 text-cream-50 flex flex-col">
-          {/* Son distant : élément audio dédié, toujours actif */}
-          <audio ref={remoteAudioRef} autoPlay />
-
-          {/* Vidéo distante plein écran (muette : le son passe par l'audio) */}
+        <div
+          className="fixed inset-0 z-[999] bg-ink-900 text-cream-50 flex flex-col"
+          onClick={() => remoteRef.current?.play().catch(() => {})}
+        >
+          {/* Vidéo distante = source du son ET de l'image (jamais cachée ni
+              muette, sinon iOS Safari ne joue pas le son de l'appel). En appel
+              audio, c'est un fond noir derrière l'avatar. */}
           <video
             ref={remoteRef}
             autoPlay
             playsInline
-            muted
-            className={`absolute inset-0 w-full h-full object-cover ${showVideo ? '' : 'hidden'}`}
+            className={`absolute inset-0 w-full h-full ${showVideo ? 'object-cover' : 'opacity-0'}`}
           />
 
           {/* Vidéo locale (PiP) */}
