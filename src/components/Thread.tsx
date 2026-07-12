@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { VoiceMessage } from '@/components/VoiceMessage';
@@ -44,6 +45,7 @@ function fmtTime(s: number) {
 
 export function Thread({ conversationId, meId, initialMessages, initialOtherReadAt }: Props) {
   const supabase = createClient();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -67,6 +69,13 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, otherTyping]);
+
+  // À l'ouverture : marque la conversation lue (badge + notifs) puis invalide
+  // le cache pour que la liste Messages se rafraîchisse au retour.
+  useEffect(() => {
+    supabase.rpc('mark_conversation_read', { conv_id: conversationId }).then(() => router.refresh());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   // Chrono d'enregistrement
   useEffect(() => {
