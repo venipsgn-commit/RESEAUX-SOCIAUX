@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
 import { createClient } from '@/lib/supabase/client';
-import { POST_TYPE_META, type PostType } from '@/lib/types';
+import { type PostType } from '@/lib/types';
 
 export type MapPost = {
   id: string;
@@ -47,6 +47,9 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   const supabase = createClient();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import('leaflet').Map | null>(null);
+  const LRef = useRef<typeof import('leaflet') | null>(null);
+  const overlayRef = useRef<import('leaflet').LayerGroup | null>(null);
+  const [mapReady, setMapReady] = useState(0);
 
   async function sayHi(userId: string) {
     const { data, error } = await supabase.rpc('get_or_create_dm', { other: userId });
@@ -57,6 +60,7 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
     router.push(`/messages/${data}`);
   }
 
+  // Initialisation de la carte (une fois par position/rayon)
   useEffect(() => {
     if (!containerRef.current) return;
     let cancelled = false;
@@ -66,8 +70,6 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       const L = (await import('leaflet')).default;
       const el = containerRef.current;
       if (cancelled || !el) return;
-
-      // Nettoie une éventuelle instance résiduelle (navigation SPA)
       if ((el as unknown as { _leaflet_id?: number })._leaflet_id) {
         mapRef.current?.remove();
         mapRef.current = null;
@@ -88,9 +90,8 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
         maxBoundsViscosity: 1,
       });
       mapRef.current = map;
+      LRef.current = L;
 
-      // Tuiles OpenStreetMap (image classique, sans WebGL, reachable partout)
-      // noWrap + bounds : le monde ne se répète pas quand on dézoome
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         crossOrigin: true,
@@ -103,13 +104,9 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       }).addTo(map);
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
-      // Recalcule la taille dès que le conteneur apparaît/change (corrige la
-      // carte grise après une navigation SPA où le conteneur démarre à 0px)
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
       resizeObserver.observe(el);
 
-      // ── Aura (cercle de rayon réel) ──
       const auraCircle = L.circle([center.lat, center.lng], {
         radius: radiusM,
         color: '#2d5a3d',
@@ -120,7 +117,6 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
         fillOpacity: 0.08,
       }).addTo(map);
 
-      // ── Marqueur "toi" ──
       const youIcon = L.divIcon({
         className: '',
         html: '<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#4a8161,#2d5a3d);border:4px solid #fff;box-shadow:0 6px 14px rgba(45,90,61,0.5);"></div>',
@@ -129,42 +125,12 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       });
       L.marker([center.lat, center.lng], { icon: youIcon, zIndexOffset: 1000 }).addTo(map);
 
-      // ── Pins des posts ──
-      posts.forEach((post) => {
-        const color = PIN_COLOR[post.type];
-        const icon = L.divIcon({
-          className: '',
-          html: `<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;box-shadow:0 6px 12px rgba(31,26,18,0.3);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:16px;">${post.emoji}</span></div>`,
-          iconSize: [36, 36],
-          iconAnchor: [18, 36],
-        });
-        L.marker([post.lat, post.lng], { icon })
-          .addTo(map)
-          .on('click', () => router.push(`/post/${post.id}`));
-      });
+      // Couche des marqueurs (posts + voisins), redessinée quand le filtre change
+      overlayRef.current = L.layerGroup().addTo(map);
 
-      // ── Avatars des voisins (façon Snap Map) ──
-      people.forEach((person) => {
-        const firstName = person.display_name.split(' ')[0];
-        const icon = L.divIcon({
-          className: '',
-          html: `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;">
-              <div class="${person.is_online ? 'snap-online' : ''}" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#fdfaf5,#f5efe3);border:3px solid ${person.is_online ? '#2d5a3d' : '#fff'};box-shadow:0 6px 14px rgba(31,26,18,0.28);display:flex;align-items:center;justify-content:center;font-size:23px;">${person.avatar_emoji}</div>
-              <div style="background:#1f1a12;color:#fdfaf5;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(31,26,18,0.2);">${firstName}${person.is_online ? ' 🟢' : ''}</div>
-            </div>`,
-          iconSize: [60, 64],
-          iconAnchor: [30, 64],
-        });
-        L.marker([person.lat, person.lng], { icon })
-          .addTo(map)
-          .on('click', () => sayHi(person.user_id));
-      });
-
-      // Cadrage sur l'aura + resize répété (corrige les cartes grises quand le
-      // conteneur démarre à 0px, typiquement après une navigation SPA)
       map.fitBounds(auraCircle.getBounds(), { padding: [40, 40], maxZoom: 16 });
       [50, 200, 500, 1000].forEach((ms) => setTimeout(() => map.invalidateSize(), ms));
+      if (!cancelled) setMapReady((n) => n + 1);
     })();
 
     return () => {
@@ -172,9 +138,51 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       resizeObserver?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
+      overlayRef.current = null;
+      setMapReady(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.lat, center.lng, radiusM]);
+
+  // (Re)dessine les marqueurs quand posts/people changent (filtre) — sans
+  // réinitialiser la carte.
+  useEffect(() => {
+    const L = LRef.current;
+    const layer = overlayRef.current;
+    if (!L || !layer || !mapReady) return;
+    layer.clearLayers();
+
+    posts.forEach((post) => {
+      const color = PIN_COLOR[post.type];
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;box-shadow:0 6px 12px rgba(31,26,18,0.3);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:16px;">${post.emoji}</span></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+      });
+      L.marker([post.lat, post.lng], { icon })
+        .on('click', () => router.push(`/post/${post.id}`))
+        .addTo(layer);
+    });
+
+    people.forEach((person) => {
+      const firstName = person.display_name.split(' ')[0];
+      const icon = L.divIcon({
+        className: '',
+        html: `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;">
+            <div class="${person.is_online ? 'snap-online' : ''}" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#fdfaf5,#f5efe3);border:3px solid ${person.is_online ? '#2d5a3d' : '#fff'};box-shadow:0 6px 14px rgba(31,26,18,0.28);display:flex;align-items:center;justify-content:center;font-size:23px;">${person.avatar_emoji}</div>
+            <div style="background:#1f1a12;color:#fdfaf5;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(31,26,18,0.2);">${firstName}${person.is_online ? ' 🟢' : ''}</div>
+          </div>`,
+        iconSize: [60, 64],
+        iconAnchor: [30, 64],
+      });
+      L.marker([person.lat, person.lng], { icon })
+        .on('click', () => sayHi(person.user_id))
+        .addTo(layer);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, posts, people]);
 
   function recenter() {
     mapRef.current?.setView([center.lat, center.lng], 16, { animate: true });

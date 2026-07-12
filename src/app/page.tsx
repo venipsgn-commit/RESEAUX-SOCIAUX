@@ -1,6 +1,8 @@
 import { Shell } from '@/components/Shell';
-import { LiveMap, type MapPost, type MapPerson } from '@/components/LiveMap';
+import { MapView } from '@/components/MapView';
+import type { MapPost, MapPerson } from '@/components/LiveMap';
 import { NotifBell } from '@/components/NotifBell';
+import { RelocateButton } from '@/components/RelocateButton';
 import { PresenceBeacon } from '@/components/PresenceBeacon';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
@@ -44,8 +46,7 @@ export default async function MapPage() {
   return (
     <Shell>
       <div className="relative h-[calc(100dvh-88px)] lg:h-screen overflow-hidden">
-        <LiveMap
-          className="absolute inset-0"
+        <MapView
           center={{ lat: pos.lat, lng: pos.lng }}
           radiusM={DEFAULT_RADIUS_M}
           posts={mapPosts}
@@ -65,27 +66,9 @@ export default async function MapPage() {
               </div>
               <div className="text-sm font-extrabold leading-tight truncate">{pos.quartier}</div>
             </div>
-            <span className="text-xs text-ink-700/60 font-bold">▼</span>
+            <RelocateButton />
           </div>
           <NotifBell variant="floating" />
-        </div>
-
-        {/* FILTERS */}
-        <div className="absolute top-16 lg:top-20 left-0 right-0 z-30 px-3 lg:px-6 overflow-x-auto">
-          <div className="flex gap-1.5 pb-1">
-            {['✨ Tout', '🛒 Vendre', '🛠 Service', '🎉 Event', '👥 Voisins', '🏪 Commerces'].map((f, i) => (
-              <button
-                key={f}
-                className={
-                  i === 0
-                    ? 'bg-ink-900 text-cream-50 text-[11px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-pin'
-                    : 'bg-cream-50/95 backdrop-blur-xl text-[11px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-soft text-ink-900'
-                }
-              >
-                {f}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* BOTTOM SHEET — voisin le plus proche (données réelles) */}
