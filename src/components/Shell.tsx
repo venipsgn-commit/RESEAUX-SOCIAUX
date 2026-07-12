@@ -60,12 +60,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         )}
       />
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-72 border-r border-ink-900/5 flex-col p-6 bg-cream-50 z-40">
-        <Link href="/" className="flex items-center gap-3 mb-10">
+      <aside className="hidden lg:flex fixed top-0 left-0 h-[100dvh] w-72 border-r border-ink-900/5 flex-col p-6 bg-cream-50 z-40">
+        <Link href="/" className="flex items-center gap-3 mb-8 flex-shrink-0">
           <div className="aura-logo" />
           <span className="text-3xl font-black tracking-tight">aura</span>
         </Link>
-        <nav className="flex flex-col gap-1 flex-1">
+        <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
           {/* Le profil est accessible via la carte "Mon profil" en bas. */}
           {DESKTOP_TABS.map((t) => {
             const active = isActive(t.href);
@@ -116,7 +116,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span>Notifications</span>
           </Link>
         </nav>
-        <Link href="/profil" className="bg-sand-100 rounded-2xl p-4 hover:bg-sand-200 transition">
+        <Link
+          href="/profil"
+          className="bg-sand-100 rounded-2xl p-4 hover:bg-sand-200 transition flex-shrink-0 mt-3"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 text-white flex items-center justify-center text-lg">
               📍
@@ -130,7 +133,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* MAIN */}
-      <main className="lg:pl-72 pb-[88px] lg:pb-0 min-h-[100dvh]">{children}</main>
+      <main className="lg:pl-72 pb-[calc(78px+env(safe-area-inset-bottom))] lg:pb-0 min-h-[100dvh]">
+        {children}
+      </main>
 
       {/* Bannière géolocalisation (invisible une fois la position choisie) */}
       <LocationGate />
@@ -139,7 +144,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <NotifWatcher />
 
       {/* MOBILE BOTTOM TAB BAR */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1.5 pt-2 pb-[max(env(safe-area-inset-bottom),16px)] bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1.5 pt-2 pb-[max(env(safe-area-inset-bottom),18px)] bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">
         <div className="flex items-end justify-around">
           {MOBILE_TABS.map((t) => {
             const active = isActive(t.href);
