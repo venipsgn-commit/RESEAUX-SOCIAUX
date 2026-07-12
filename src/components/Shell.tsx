@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { LocationGate } from './LocationGate';
 import { NotifWatcher } from './NotifWatcher';
 import { MessagesBadge } from './MessagesBadge';
+import { CallProvider } from './CallProvider';
 
 type TabDef = { href: string; label: string; icon: string };
 
@@ -32,6 +33,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const go = (href: string) => (href === pathname ? undefined : setPending(href));
 
   return (
+    <CallProvider>
     <div className="min-h-[100dvh] bg-cream-50 text-ink-900">
       {/* Barre de progression de navigation */}
       <div
@@ -158,5 +160,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
     </div>
+    </CallProvider>
   );
 }

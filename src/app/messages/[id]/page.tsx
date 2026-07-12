@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { Shell } from '@/components/Shell';
 import { Thread } from '@/components/Thread';
-import { CallPanel } from '@/components/CallPanel';
+import { CallButtons } from '@/components/CallButtons';
 import { createClient } from '@/lib/supabase/server';
 import type { Message, Profile } from '@/lib/types';
 
@@ -64,14 +64,13 @@ export default async function ThreadPage({ params }: { params: { id: string } })
               <b className="text-forest-600">{other?.neighbor_score ?? 50}</b>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <CallPanel
-              conversationId={params.id}
-              meId={user.id}
+          {otherId && (
+            <CallButtons
+              otherId={otherId}
               otherName={other?.display_name ?? 'Voisin·e'}
               otherAvatar={other?.avatar_emoji ?? '📍'}
             />
-          </div>
+          )}
         </header>
 
         <Thread

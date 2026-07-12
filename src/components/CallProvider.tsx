@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 
 type CallType = 'audio' | 'video';
 type Phase = 'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected';
+type Peer = { id: string; name: string; avatar: string };
 
-// STUN (Google) + TURN. Un vrai serveur TURN (relais) est indispensable pour
-// que l'appel passe sur les réseaux mobiles/4G. On peut en brancher un fiable
-// via les variables d'environnement NEXT_PUBLIC_TURN_URL / _USERNAME / _CREDENTIAL.
 const ICE_SERVERS: RTCIceServer[] = [
   {
     urls: [
@@ -25,7 +23,6 @@ const ICE_SERVERS: RTCIceServer[] = [
     credential: 'openrelayproject',
   },
 ];
-
 if (process.env.NEXT_PUBLIC_TURN_URL) {
   ICE_SERVERS.push({
     urls: process.env.NEXT_PUBLIC_TURN_URL.split(','),
@@ -40,7 +37,6 @@ function fmt(s: number) {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 
-/** Tonalité de sonnerie (entrant = double bip aigu, sortant = bip d'attente). */
 function playRingTone(incoming: boolean) {
   try {
     const AC =
@@ -70,89 +66,91 @@ function playRingTone(incoming: boolean) {
 }
 
 const IconMic = ({ off = false, size = 24 }: { off?: boolean; size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="9" y="2.5" width="6" height="11" rx="3" />
     <path d="M5 11a7 7 0 0 0 14 0" />
     <line x1="12" y1="18" x2="12" y2="21.5" />
     {off && <line x1="4" y1="3.5" x2="20" y2="20.5" />}
   </svg>
 );
-
 const IconVideo = ({ off = false, size = 24 }: { off?: boolean; size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2.5" y="6.5" width="12" height="11" rx="2.5" />
     <path d="M14.8 10.6 21 7.5v9l-6.2-3" />
     {off && <line x1="4" y1="3.5" x2="20" y2="20.5" />}
   </svg>
 );
-
 const IconPhone = ({ size = 26, className = '' }: { size?: number; className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M6.6 10.8a15.6 15.6 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.05-.24 1.1.45 2.3.7 3.55.7.6 0 1 .45 1 1V20c0 .6-.4 1-1 1C10.85 21 3 13.15 3 3.9c0-.55.45-1 1-1h3.35c.55 0 1 .4 1 1 0 1.25.25 2.45.7 3.55.15.35.05.75-.24 1.05l-2.2 2.3z" />
   </svg>
 );
 
-type Props = {
-  conversationId: string;
-  meId: string;
-  otherName: string;
-  otherAvatar: string;
-};
+type CallApi = { startCall: (peer: Peer, type: CallType) => void; busy: boolean };
+const CallCtx = createContext<CallApi>({ startCall: () => {}, busy: false });
+export const useCall = () => useContext(CallCtx);
 
-export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Props) {
+export function CallProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const [phase, setPhase] = useState<Phase>('idle');
   const [type, setType] = useState<CallType>('audio');
+  const [peer, setPeer] = useState<Peer | null>(null);
   const [secs, setSecs] = useState(0);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
+  const meRef = useRef<{ id: string; name: string; avatar: string } | null>(null);
   const chanRef = useRef<RealtimeChannel | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
   const iceBufferRef = useRef<RTCIceCandidateInit[]>([]);
+  const peerRef = useRef<Peer | null>(null);
+  const phaseRef = useRef<Phase>('idle');
   const remoteRef = useRef<HTMLVideoElement>(null);
   const localRef = useRef<HTMLVideoElement>(null);
 
-  // Signalisation via Realtime broadcast
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
-    const ch = supabase
-      .channel(`call:${conversationId}`, { config: { broadcast: { self: false } } })
-      .on('broadcast', { event: 'signal' }, ({ payload }) => handleSignal(payload))
-      .subscribe();
-    chanRef.current = ch;
+    phaseRef.current = phase;
+  }, [phase]);
+  useEffect(() => {
+    peerRef.current = peer;
+  }, [peer]);
+
+  // Identité + canal d'appels global (inbox par utilisateur)
+  useEffect(() => {
+    let ch: RealtimeChannel | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid) return;
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_emoji')
+        .eq('id', uid)
+        .single();
+      meRef.current = {
+        id: uid,
+        name: prof?.display_name ?? 'Moi',
+        avatar: prof?.avatar_emoji ?? '📍',
+      };
+      ch = supabase
+        .channel('calls', { config: { broadcast: { self: false } } })
+        .on('broadcast', { event: 'signal' }, ({ payload }) => handleSignal(payload))
+        .subscribe();
+      chanRef.current = ch;
+    })();
     return () => {
-      supabase.removeChannel(ch);
+      if (ch) supabase.removeChannel(ch);
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId]);
+  }, []);
 
-  // Chrono d'appel
   useEffect(() => {
     if (phase !== 'connected') return;
     setSecs(0);
@@ -160,7 +158,6 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     return () => clearInterval(id);
   }, [phase]);
 
-  // Sonnerie (entrant) / tonalité d'attente (sortant) + vibration
   useEffect(() => {
     if (phase !== 'incoming' && phase !== 'outgoing') return;
     const incoming = phase === 'incoming';
@@ -186,7 +183,6 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     };
   }, [phase]);
 
-  // Message d'aide si la connexion tarde (souvent un souci de réseau/TURN)
   useEffect(() => {
     if (phase !== 'connecting' && phase !== 'outgoing') return;
     const id = setTimeout(() => {
@@ -195,14 +191,19 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     return () => clearTimeout(id);
   }, [phase]);
 
-  function send(data: Record<string, unknown>) {
-    chanRef.current?.send({ type: 'broadcast', event: 'signal', payload: { ...data, from: meId } });
+  function send(kind: string, extra: Record<string, unknown> = {}) {
+    const to = peerRef.current?.id;
+    const me = meRef.current;
+    if (!to || !me) return;
+    chanRef.current?.send({
+      type: 'broadcast',
+      event: 'signal',
+      payload: { to, from: me.id, kind, ...extra },
+    });
   }
 
   function attachRemote() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
-    // Le son ET l'image passent par l'élément <video playsinline> non-muet
-    // (seul moyen fiable de jouer le son WebRTC sur iOS Safari, même en audio).
     if (remoteRef.current) {
       remoteRef.current.srcObject = remoteStreamRef.current;
       remoteRef.current.play().catch(() => {});
@@ -212,7 +213,7 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   function createPeer() {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pc.onicecandidate = (e) => {
-      if (e.candidate) send({ kind: 'ice', candidate: e.candidate.toJSON() });
+      if (e.candidate) send('ice', { candidate: e.candidate.toJSON() });
     };
     pc.ontrack = (e) => {
       if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
@@ -225,14 +226,12 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
       remoteRef.current?.play().catch(() => {});
     };
     pc.onconnectionstatechange = () => {
-      const st = pc.connectionState;
-      if (st === 'connected') markConnected();
-      else if (st === 'failed') {
+      if (pc.connectionState === 'connected') markConnected();
+      else if (pc.connectionState === 'failed') {
         setErr('Connexion impossible sur ce réseau. Essaie en Wi-Fi.');
         endCall(false);
       }
     };
-    // Filet de sécurité (Safari met parfois à jour iceConnectionState en premier)
     pc.oniceconnectionstatechange = () => {
       const st = pc.iceConnectionState;
       if (st === 'connected' || st === 'completed') markConnected();
@@ -273,24 +272,29 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     iceBufferRef.current = [];
   }
 
-  async function startCall(t: CallType) {
-    if (phase !== 'idle') return;
+  function startCall(p: Peer, t: CallType) {
+    if (phaseRef.current !== 'idle') return;
     setErr(null);
+    setPeer(p);
+    peerRef.current = p;
     setType(t);
     setMuted(false);
     setCamOff(false);
     setPhase('outgoing');
-    try {
-      const pc = createPeer();
-      await getLocalMedia(t);
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      send({ kind: 'offer', sdp: pc.localDescription, callType: t });
-    } catch {
-      setErr("Caméra/micro indisponible. Autorise l'accès.");
-      cleanup();
-      setPhase('idle');
-    }
+    (async () => {
+      try {
+        const pc = createPeer();
+        await getLocalMedia(t);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        const me = meRef.current;
+        send('offer', { sdp: pc.localDescription, callType: t, fromName: me?.name, fromAvatar: me?.avatar });
+      } catch {
+        setErr("Caméra/micro indisponible. Autorise l'accès.");
+        cleanup();
+        setPhase('idle');
+      }
+    })();
   }
 
   async function acceptCall() {
@@ -305,7 +309,7 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
       await flushIce();
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      send({ kind: 'answer', sdp: pc.localDescription });
+      send('answer', { sdp: pc.localDescription });
       pendingOfferRef.current = null;
     } catch {
       setErr("Caméra/micro indisponible. Autorise l'accès.");
@@ -314,17 +318,15 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   }
 
   function rejectCall() {
-    send({ kind: 'reject' });
+    send('reject');
     cleanup();
     setPhase('idle');
   }
-
   function endCall(notify: boolean) {
-    if (notify) send({ kind: 'end' });
+    if (notify) send('end');
     cleanup();
     setPhase('idle');
   }
-
   function cleanup() {
     pcRef.current?.getSenders().forEach((s) => s.track?.stop());
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -337,19 +339,31 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   }
 
   async function handleSignal(p: {
+    to?: string;
     from?: string;
     kind?: string;
     sdp?: RTCSessionDescriptionInit;
     candidate?: RTCIceCandidateInit;
     callType?: CallType;
+    fromName?: string;
+    fromAvatar?: string;
   }) {
-    if (!p || p.from === meId) return;
+    const me = meRef.current;
+    if (!p || !me || p.to !== me.id || p.from === me.id) return;
     switch (p.kind) {
       case 'offer': {
-        if (phase !== 'idle') {
-          send({ kind: 'busy' });
+        if (phaseRef.current !== 'idle') {
+          // occupé : refuse poliment
+          chanRef.current?.send({
+            type: 'broadcast',
+            event: 'signal',
+            payload: { to: p.from, from: me.id, kind: 'busy' },
+          });
           return;
         }
+        const pr = { id: p.from!, name: p.fromName ?? 'Voisin·e', avatar: p.fromAvatar ?? '📍' };
+        setPeer(pr);
+        peerRef.current = pr;
         pendingOfferRef.current = p.sdp ?? null;
         setType(p.callType ?? 'audio');
         setMuted(false);
@@ -426,25 +440,8 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
             : '';
 
   return (
-    <>
-      {/* Boutons d'appel (dans le header) */}
-      <button
-        onClick={() => startCall('audio')}
-        disabled={inCall}
-        aria-label="Appel audio"
-        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center disabled:opacity-40 active:scale-90 hover:bg-forest-500/20 transition"
-      >
-        <IconPhone size={17} />
-      </button>
-      <button
-        onClick={() => startCall('video')}
-        disabled={inCall}
-        aria-label="Appel vidéo"
-        className="w-9 h-9 rounded-full bg-forest-500/10 text-forest-600 flex items-center justify-center disabled:opacity-40 active:scale-90 hover:bg-forest-500/20 transition"
-      >
-        <IconVideo size={18} />
-      </button>
-
+    <CallCtx.Provider value={{ startCall, busy: inCall }}>
+      {children}
       {mounted &&
         inCall &&
         createPortal(
@@ -452,130 +449,118 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
             className="fixed inset-0 z-[999] text-cream-50 select-none animate-fade-up"
             onClick={() => remoteRef.current?.play().catch(() => {})}
           >
-          {/* Fond : dégradé aura (audio) ou noir (vidéo) */}
-          <div
-            className={`absolute inset-0 ${
-              showVideo
-                ? 'bg-ink-900'
-                : 'bg-[radial-gradient(circle_at_50%_22%,#31674a_0%,#1b2e21_50%,#100e0a_100%)]'
-            }`}
-          />
-
-          {/* Vidéo distante : image (visio) + son (toujours actif, invisible en audio) */}
-          <video
-            ref={remoteRef}
-            autoPlay
-            playsInline
-            className={`absolute inset-0 w-full h-full ${
-              showVideo ? 'object-cover' : 'opacity-0 pointer-events-none'
-            }`}
-          />
-
-          {/* Voiles pour la lisibilité en visio */}
-          {showVideo && (
-            <>
-              <div className="absolute top-0 inset-x-0 h-44 bg-gradient-to-b from-ink-900/75 to-transparent" />
-              <div className="absolute bottom-0 inset-x-0 h-60 bg-gradient-to-t from-ink-900/85 to-transparent" />
-            </>
-          )}
-
-          {/* Caméra locale (PiP) */}
-          {type === 'video' && !camOff && phase !== 'incoming' && (
+            <div
+              className={`absolute inset-0 ${
+                showVideo
+                  ? 'bg-ink-900'
+                  : 'bg-[radial-gradient(circle_at_50%_22%,#31674a_0%,#1b2e21_50%,#100e0a_100%)]'
+              }`}
+            />
             <video
-              ref={localRef}
+              ref={remoteRef}
               autoPlay
               playsInline
-              muted
-              className="absolute top-5 right-4 w-24 h-36 sm:w-28 sm:h-40 object-cover rounded-2xl border border-cream-50/25 shadow-lift z-20 bg-ink-900"
+              className={`absolute inset-0 w-full h-full ${
+                showVideo ? 'object-cover' : 'opacity-0 pointer-events-none'
+              }`}
             />
-          )}
+            {showVideo && (
+              <>
+                <div className="absolute top-0 inset-x-0 h-44 bg-gradient-to-b from-ink-900/75 to-transparent" />
+                <div className="absolute bottom-0 inset-x-0 h-60 bg-gradient-to-t from-ink-900/85 to-transparent" />
+              </>
+            )}
+            {type === 'video' && !camOff && phase !== 'incoming' && (
+              <video
+                ref={localRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute top-5 right-4 w-24 h-36 sm:w-28 sm:h-40 object-cover rounded-2xl border border-cream-50/25 shadow-lift z-20 bg-ink-900"
+              />
+            )}
 
-          {/* Haut : identité + statut */}
-          <div className="absolute top-0 inset-x-0 z-10 pt-[env(safe-area-inset-top)]">
-            <div className="pt-8 px-6 text-center">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-cream-50/60 font-bold">
-                {type === 'video' ? 'Appel vidéo' : 'Appel audio'}
-              </div>
-              <div className="text-[26px] font-black leading-tight mt-1.5 [text-wrap:balance]">
-                {otherName}
-              </div>
-              <div className="text-sm text-cream-50/75 mt-1 tabular-nums min-h-[20px]">
-                {statusText}
-              </div>
-              {err && (
-                <div className="text-xs text-sunset-300 mt-2 max-w-xs mx-auto leading-snug">{err}</div>
-              )}
-            </div>
-          </div>
-
-          {/* Centre (audio) : avatar avec halo pulsant */}
-          {!showVideo && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative flex items-center justify-center">
-                {phase !== 'connected' && (
-                  <>
-                    <span className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40" />
-                    <span
-                      className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40"
-                      style={{ animationDelay: '1.3s' }}
-                    />
-                  </>
-                )}
-                <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-forest-300 to-forest-600 flex items-center justify-center text-7xl border border-cream-50/10 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)]">
-                  {otherAvatar}
+            <div className="absolute top-0 inset-x-0 z-10 pt-[env(safe-area-inset-top)]">
+              <div className="pt-8 px-6 text-center">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-cream-50/60 font-bold">
+                  {type === 'video' ? 'Appel vidéo' : 'Appel audio'}
                 </div>
+                <div className="text-[26px] font-black leading-tight mt-1.5 [text-wrap:balance]">
+                  {peer?.name ?? 'Voisin·e'}
+                </div>
+                <div className="text-sm text-cream-50/75 mt-1 tabular-nums min-h-[20px]">{statusText}</div>
+                {err && (
+                  <div className="text-xs text-sunset-300 mt-2 max-w-xs mx-auto leading-snug">{err}</div>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Bas : contrôles */}
-          <div className="absolute bottom-0 inset-x-0 z-20 pb-[calc(env(safe-area-inset-bottom)+30px)] pt-4">
-            {phase === 'incoming' ? (
-              <div className="flex items-start justify-center gap-16">
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={rejectCall}
-                    aria-label="Refuser"
-                    className="w-16 h-16 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
-                  >
-                    <IconPhone className="rotate-[135deg]" />
-                  </button>
-                  <span className="text-xs text-cream-50/70 font-semibold">Refuser</span>
+            {!showVideo && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative flex items-center justify-center">
+                  {phase !== 'connected' && (
+                    <>
+                      <span className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40" />
+                      <span
+                        className="call-aura absolute w-36 h-36 rounded-full bg-forest-400/40"
+                        style={{ animationDelay: '1.3s' }}
+                      />
+                    </>
+                  )}
+                  <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-forest-300 to-forest-600 flex items-center justify-center text-7xl border border-cream-50/10 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)]">
+                    {peer?.avatar ?? '📍'}
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={acceptCall}
-                    aria-label="Accepter"
-                    className="w-16 h-16 rounded-full bg-forest-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition animate-pulse"
-                  >
-                    <IconPhone />
-                  </button>
-                  <span className="text-xs text-cream-50/70 font-semibold">Accepter</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-5">
-                <button onClick={toggleMute} aria-label="Micro" className={ctrl(muted)}>
-                  <IconMic off={muted} />
-                </button>
-                {type === 'video' && (
-                  <button onClick={toggleCam} aria-label="Caméra" className={ctrl(camOff)}>
-                    <IconVideo off={camOff} />
-                  </button>
-                )}
-                <button
-                  onClick={() => endCall(true)}
-                  aria-label="Raccrocher"
-                  className="w-[68px] h-[68px] rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
-                >
-                  <IconPhone size={28} className="rotate-[135deg]" />
-                </button>
               </div>
             )}
-          </div>
+
+            <div className="absolute bottom-0 inset-x-0 z-20 pb-[calc(env(safe-area-inset-bottom)+30px)] pt-4">
+              {phase === 'incoming' ? (
+                <div className="flex items-start justify-center gap-16">
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={rejectCall}
+                      aria-label="Refuser"
+                      className="w-16 h-16 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
+                    >
+                      <IconPhone className="rotate-[135deg]" />
+                    </button>
+                    <span className="text-xs text-cream-50/70 font-semibold">Refuser</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={acceptCall}
+                      aria-label="Accepter"
+                      className="w-16 h-16 rounded-full bg-forest-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition animate-pulse"
+                    >
+                      <IconPhone />
+                    </button>
+                    <span className="text-xs text-cream-50/70 font-semibold">Accepter</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-5">
+                  <button onClick={toggleMute} aria-label="Micro" className={ctrl(muted)}>
+                    <IconMic off={muted} />
+                  </button>
+                  {type === 'video' && (
+                    <button onClick={toggleCam} aria-label="Caméra" className={ctrl(camOff)}>
+                      <IconVideo off={camOff} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => endCall(true)}
+                    aria-label="Raccrocher"
+                    className="w-[68px] h-[68px] rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lift active:scale-90 transition"
+                  >
+                    <IconPhone size={28} className="rotate-[135deg]" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>,
           document.body,
         )}
-    </>
+    </CallCtx.Provider>
   );
 }
