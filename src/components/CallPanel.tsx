@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 
@@ -124,6 +125,9 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const chanRef = useRef<RealtimeChannel | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -441,11 +445,13 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
         <IconVideo size={18} />
       </button>
 
-      {inCall && (
-        <div
-          className="fixed inset-0 z-[999] text-cream-50 select-none animate-fade-up"
-          onClick={() => remoteRef.current?.play().catch(() => {})}
-        >
+      {mounted &&
+        inCall &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[999] text-cream-50 select-none animate-fade-up"
+            onClick={() => remoteRef.current?.play().catch(() => {})}
+          >
           {/* Fond : dégradé aura (audio) ou noir (vidéo) */}
           <div
             className={`absolute inset-0 ${
@@ -567,8 +573,9 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
               </div>
             )}
           </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

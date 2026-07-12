@@ -117,7 +117,9 @@ export function VoiceMessage({ url, mine }: { url: string; mine: boolean }) {
             <span className="w-[3px] h-3.5 rounded-full bg-current" />
           </span>
         ) : (
-          <span className="ml-0.5 text-[13px] leading-none">▶</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+            <path d="M8 5v14l11-7z" />
+          </svg>
         )}
       </button>
 
