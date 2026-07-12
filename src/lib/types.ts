@@ -104,6 +104,17 @@ export type NotifItem = {
   actor_avatar_emoji: string | null;
 };
 
+export type Reel = {
+  id: string;
+  video_url: string;
+  caption: string | null;
+  created_at: string;
+  user_id: string;
+  handle: string | null;
+  display_name: string | null;
+  avatar_emoji: string | null;
+};
+
 export type CommentItem = {
   id: string;
   body: string;

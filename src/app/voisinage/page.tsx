@@ -204,6 +204,9 @@ export default async function VoisinagePage() {
                   Rejoindre
                 </Link>
               )}
+              <Link href="/marche" aria-label="Marché" className="lg:hidden text-xl">
+                🛒
+              </Link>
               <NotifBell />
               <Link href="/messages" aria-label="Messages" className="relative text-xl">
                 💬

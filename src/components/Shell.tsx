@@ -11,13 +11,27 @@ import { CallProvider } from './CallProvider';
 
 type TabDef = { href: string; label: string; icon: string };
 
-const TABS: TabDef[] = [
-  { href: '/', label: 'Carte', icon: '🗺' },
-  { href: '/voisinage', label: 'Voisinage', icon: '🏘' },
-  { href: '/compose', label: 'Publier', icon: '＋' },
-  { href: '/marche', label: 'Marché', icon: '🛒' },
-  { href: '/profil', label: 'Profil', icon: '👤' },
+const NAV = {
+  carte: { href: '/', label: 'Carte', icon: '🗺' },
+  voisinage: { href: '/voisinage', label: 'Voisinage', icon: '🏘' },
+  compose: { href: '/compose', label: 'Publier', icon: '＋' },
+  reels: { href: '/reels', label: 'Réels', icon: '🎬' },
+  messages: { href: '/messages', label: 'Messages', icon: '💬' },
+  profil: { href: '/profil', label: 'Profil', icon: '👤' },
+  marche: { href: '/marche', label: 'Marché', icon: '🛒' },
+};
+
+// Mobile : 6 icônes 🗺 🏘 ➕ 🎬 💬 👤 (Marché via raccourci)
+const MOBILE_TABS: TabDef[] = [
+  NAV.carte,
+  NAV.voisinage,
+  NAV.compose,
+  NAV.reels,
+  NAV.messages,
+  NAV.profil,
 ];
+// Desktop : Messages/Notifications gérés à part (badge)
+const DESKTOP_TABS: TabDef[] = [NAV.carte, NAV.voisinage, NAV.compose, NAV.marche, NAV.reels];
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,8 +41,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setPending(null), [pathname]);
 
   const current = pending ?? pathname;
-  const activeHref = TABS.find((t) => t.href === current)?.href ?? (current === '/' ? '/' : '');
   const navigating = pending !== null && pending !== pathname;
+  const isActive = (href: string) =>
+    href === '/' ? current === '/' : current === href || current.startsWith(href + '/');
 
   const go = (href: string) => (href === pathname ? undefined : setPending(href));
 
@@ -50,11 +65,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="text-3xl font-black tracking-tight">aura</span>
         </Link>
         <nav className="flex flex-col gap-1 flex-1">
-          {/* Sur desktop, le profil est déjà accessible via la carte "Mon profil"
-              en bas de la sidebar → on retire la ligne "Profil" du menu ici
-              pour éviter le doublon (elle reste dans la tab bar mobile). */}
-          {TABS.filter((t) => t.href !== '/profil').map((t) => {
-            const active = t.href === activeHref;
+          {/* Le profil est accessible via la carte "Mon profil" en bas. */}
+          {DESKTOP_TABS.map((t) => {
+            const active = isActive(t.href);
             return (
               <Link
                 key={t.href}
@@ -127,8 +140,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {/* MOBILE BOTTOM TAB BAR */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-2 pt-3 pb-6 bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">
         <div className="flex items-center justify-around">
-          {TABS.map((t) => {
-            const active = t.href === activeHref;
+          {MOBILE_TABS.map((t) => {
+            const active = isActive(t.href);
             if (t.href === '/compose') {
               return (
                 <Link
@@ -136,7 +149,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={t.href}
                   onClick={() => go(t.href)}
                   aria-label="Publier"
-                  className="-mt-2 w-14 h-14 rounded-2xl text-white text-3xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition"
+                  className="-mt-2 w-12 h-12 rounded-2xl text-white text-2xl font-light flex items-center justify-center bg-gradient-to-br from-sunset-500 to-coral-500 shadow-pin active:scale-95 transition flex-shrink-0"
                 >
                   ＋
                 </Link>
@@ -152,7 +165,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   active ? 'text-ink-900' : 'text-ink-700/40',
                 )}
               >
-                <span className="text-[22px] leading-none">{t.icon}</span>
+                <span className="relative text-[21px] leading-none">
+                  {t.icon}
+                  {t.href === '/messages' && <MessagesBadge />}
+                </span>
                 <span className="text-[9px] font-bold uppercase tracking-wider">{t.label}</span>
               </Link>
             );
