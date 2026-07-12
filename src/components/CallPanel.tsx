@@ -29,6 +29,35 @@ function fmt(s: number) {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 
+/** Tonalité de sonnerie (entrant = double bip aigu, sortant = bip d'attente). */
+function playRingTone(incoming: boolean) {
+  try {
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const now = ctx.currentTime;
+    const offs = incoming ? [0, 0.4] : [0];
+    offs.forEach((off) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = incoming ? 620 : 440;
+      const t = now + off;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(incoming ? 0.35 : 0.16, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.36);
+    });
+    setTimeout(() => ctx.close(), incoming ? 1000 : 600);
+  } catch {
+    /* audio indisponible */
+  }
+}
+
 type Props = {
   conversationId: string;
   meId: string;
@@ -52,6 +81,7 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
   const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
   const iceBufferRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localRef = useRef<HTMLVideoElement>(null);
 
   // Signalisation via Realtime broadcast
@@ -76,15 +106,48 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
     return () => clearInterval(id);
   }, [phase]);
 
+  // Sonnerie (entrant) / tonalité d'attente (sortant) + vibration
+  useEffect(() => {
+    if (phase !== 'incoming' && phase !== 'outgoing') return;
+    const incoming = phase === 'incoming';
+    const beat = () => {
+      playRingTone(incoming);
+      if (incoming) {
+        try {
+          navigator.vibrate?.([500, 300, 500]);
+        } catch {
+          /* pas de vibreur */
+        }
+      }
+    };
+    beat();
+    const id = setInterval(beat, incoming ? 2200 : 3200);
+    return () => {
+      clearInterval(id);
+      try {
+        navigator.vibrate?.(0);
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [phase]);
+
   function send(data: Record<string, unknown>) {
     chanRef.current?.send({ type: 'broadcast', event: 'signal', payload: { ...data, from: meId } });
   }
 
   function attachRemote() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
+    const s = remoteStreamRef.current;
+    // Le son est joué par un <audio> dédié (fiable même en appel audio) ;
+    // la <video> distante est muette et ne sert qu'à l'image.
     if (remoteRef.current) {
-      remoteRef.current.srcObject = remoteStreamRef.current;
+      remoteRef.current.srcObject = s;
       remoteRef.current.play().catch(() => {});
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = s;
+      remoteAudioRef.current.play().catch(() => {});
     }
   }
 
@@ -298,11 +361,15 @@ export function CallPanel({ conversationId, meId, otherName, otherAvatar }: Prop
 
       {inCall && (
         <div className="fixed inset-0 z-[999] bg-ink-900 text-cream-50 flex flex-col">
-          {/* Vidéo distante plein écran */}
+          {/* Son distant : élément audio dédié, toujours actif */}
+          <audio ref={remoteAudioRef} autoPlay />
+
+          {/* Vidéo distante plein écran (muette : le son passe par l'audio) */}
           <video
             ref={remoteRef}
             autoPlay
             playsInline
+            muted
             className={`absolute inset-0 w-full h-full object-cover ${showVideo ? '' : 'hidden'}`}
           />
 
