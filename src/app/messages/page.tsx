@@ -38,7 +38,7 @@ export default async function MessagesPage() {
 
   return (
     <Shell>
-      <MessagesListRefresher uid={user.id} />
+      <MessagesListRefresher uid={user.id} convIds={conversations.map((c) => c.conversation_id)} />
       <div className="max-w-2xl mx-auto">
         <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3">
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">Messages</h1>
