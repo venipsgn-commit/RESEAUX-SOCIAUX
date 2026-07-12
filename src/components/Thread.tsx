@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { VoiceMessage } from '@/components/VoiceMessage';
 import type { Message, AttachmentType } from '@/lib/types';
 
 type Props = {
@@ -268,7 +269,7 @@ export function Thread({ conversationId, meId, initialMessages }: Props) {
                   />
                 )}
                 {m.attachment_type === 'audio' && m.attachment_url && (
-                  <audio src={m.attachment_url} controls className="w-60 max-w-full h-10" />
+                  <VoiceMessage url={m.attachment_url} mine={mine} />
                 )}
                 {m.body && (
                   <div className={`whitespace-pre-wrap break-words ${hasMedia ? 'px-2 pt-1.5' : ''}`}>
