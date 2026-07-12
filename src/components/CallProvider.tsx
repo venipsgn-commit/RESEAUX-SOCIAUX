@@ -112,6 +112,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const phaseRef = useRef<Phase>('idle');
   const remoteRef = useRef<HTMLVideoElement>(null);
   const localRef = useRef<HTMLVideoElement>(null);
+  // Suivi pour l'historique d'appel
+  const wasCallerRef = useRef(false);
+  const connectedRef = useRef(false);
+  const secsRef = useRef(0);
+  const loggedRef = useRef(false);
+  const typeRef = useRef<CallType>('audio');
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -154,9 +160,34 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (phase !== 'connected') return;
     setSecs(0);
-    const id = setInterval(() => setSecs((s) => s + 1), 1000);
+    secsRef.current = 0;
+    const id = setInterval(() => {
+      secsRef.current += 1;
+      setSecs(secsRef.current);
+    }, 1000);
     return () => clearInterval(id);
   }, [phase]);
+
+  // Enregistre l'appel dans l'historique de la conversation (côté appelant)
+  async function logCall(status: 'answered' | 'missed' | 'declined') {
+    if (!wasCallerRef.current || loggedRef.current) return;
+    loggedRef.current = true;
+    const other = peerRef.current;
+    const me = meRef.current;
+    if (!other || !me) return;
+    try {
+      const { data: convId } = await supabase.rpc('get_or_create_dm', { other: other.id });
+      if (!convId) return;
+      await supabase.from('messages').insert({
+        conversation_id: convId as string,
+        sender_id: me.id,
+        attachment_type: 'call',
+        body: `call|${typeRef.current}|${status}|${secsRef.current}`,
+      });
+    } catch {
+      /* log best-effort */
+    }
+  }
 
   useEffect(() => {
     if (phase !== 'incoming' && phase !== 'outgoing') return;
@@ -222,6 +253,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
     const markConnected = () => {
       setErr(null);
+      connectedRef.current = true;
       setPhase('connected');
       remoteRef.current?.play().catch(() => {});
     };
@@ -278,6 +310,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setPeer(p);
     peerRef.current = p;
     setType(t);
+    typeRef.current = t;
+    wasCallerRef.current = true;
+    connectedRef.current = false;
+    loggedRef.current = false;
+    secsRef.current = 0;
     setMuted(false);
     setCamOff(false);
     setPhase('outgoing');
@@ -323,6 +360,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setPhase('idle');
   }
   function endCall(notify: boolean) {
+    logCall(connectedRef.current ? 'answered' : 'missed');
     if (notify) send('end');
     cleanup();
     setPhase('idle');
@@ -366,6 +404,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         peerRef.current = pr;
         pendingOfferRef.current = p.sdp ?? null;
         setType(p.callType ?? 'audio');
+        typeRef.current = p.callType ?? 'audio';
+        wasCallerRef.current = false;
+        connectedRef.current = false;
+        loggedRef.current = false;
+        secsRef.current = 0;
         setMuted(false);
         setCamOff(false);
         setPhase('incoming');
@@ -396,15 +439,18 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       case 'reject':
         setErr('Appel refusé.');
+        logCall('declined');
         cleanup();
         setPhase('idle');
         break;
       case 'busy':
         setErr('Ton correspondant est déjà en appel.');
+        logCall('missed');
         cleanup();
         setPhase('idle');
         break;
       case 'end':
+        logCall(connectedRef.current ? 'answered' : 'missed');
         cleanup();
         setPhase('idle');
         break;

@@ -266,6 +266,38 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
         )}
         {messages.map((m) => {
           const mine = m.sender_id === meId;
+
+          // Entrée d'historique d'appel
+          if (m.attachment_type === 'call') {
+            const [, ctype, status, dur] = (m.body ?? '').split('|');
+            const isVideo = ctype === 'video';
+            const bad = status === 'missed' || status === 'declined';
+            const label =
+              status === 'missed'
+                ? `Appel ${isVideo ? 'vidéo' : 'audio'} manqué`
+                : status === 'declined'
+                  ? 'Appel refusé'
+                  : `Appel ${isVideo ? 'vidéo' : 'audio'} · ${fmtTime(Number(dur) || 0)}`;
+            return (
+              <div key={m.id} className="flex justify-center my-1">
+                <div
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold ${
+                    bad ? 'bg-coral-500/10 text-coral-500' : 'bg-sand-100 text-ink-700/70'
+                  }`}
+                >
+                  <span>{isVideo ? '🎥' : '📞'}</span>
+                  <span>{label}</span>
+                  <span className="text-ink-700/35 font-normal">
+                    {new Date(m.created_at).toLocaleTimeString('fr-FR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
           const hasMedia = !!m.attachment_url;
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>

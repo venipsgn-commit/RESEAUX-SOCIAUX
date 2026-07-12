@@ -62,15 +62,26 @@ export default async function MessagesPage() {
               {conversations.map((c) => {
                 const mine = c.last_sender_id === user.id;
                 const unread = c.unread_count > 0;
-                const mediaLabel =
-                  c.last_attachment_type === 'image'
-                    ? '📷 Photo'
-                    : c.last_attachment_type === 'video'
-                      ? '🎥 Vidéo'
-                      : c.last_attachment_type === 'audio'
-                        ? '🎤 Message vocal'
-                        : null;
-                const preview = c.last_body || mediaLabel;
+                let preview: string | null;
+                if (c.last_attachment_type === 'call') {
+                  const [, ctype, status] = (c.last_body ?? '').split('|');
+                  preview =
+                    status === 'missed'
+                      ? `📞 Appel ${ctype === 'video' ? 'vidéo ' : ''}manqué`
+                      : status === 'declined'
+                        ? '📞 Appel refusé'
+                        : `📞 Appel ${ctype === 'video' ? 'vidéo' : 'audio'}`;
+                } else {
+                  const mediaLabel =
+                    c.last_attachment_type === 'image'
+                      ? '📷 Photo'
+                      : c.last_attachment_type === 'video'
+                        ? '🎥 Vidéo'
+                        : c.last_attachment_type === 'audio'
+                          ? '🎤 Message vocal'
+                          : null;
+                  preview = c.last_body || mediaLabel;
+                }
                 return (
                   <Link
                     key={c.conversation_id}

@@ -77,7 +77,7 @@ export type Conversation = {
   last_attachment_type: AttachmentType | null;
 };
 
-export type AttachmentType = 'image' | 'video' | 'audio';
+export type AttachmentType = 'image' | 'video' | 'audio' | 'call';
 
 export type Message = {
   id: string;
@@ -89,7 +89,7 @@ export type Message = {
   attachment_type?: AttachmentType | null;
 };
 
-export type NotifType = 'message' | 'like' | 'comment';
+export type NotifType = 'message' | 'like' | 'comment' | 'call';
 
 export type NotifItem = {
   id: string;

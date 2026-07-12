@@ -9,6 +9,7 @@ const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   message: { icon: '💬', verb: "t'a envoyé un message" },
   like: { icon: '❤️', verb: 'a aimé ton post' },
   comment: { icon: '🗨️', verb: 'a commenté ton post' },
+  call: { icon: '📞', verb: "a essayé de t'appeler" },
 };
 
 export default async function NotificationsPage() {
@@ -65,7 +66,7 @@ export default async function NotificationsPage() {
               {notifs.map((n) => {
                 const meta = TYPE_META[n.type];
                 const href =
-                  n.type === 'message' && n.conversation_id
+                  (n.type === 'message' || n.type === 'call') && n.conversation_id
                     ? `/messages/${n.conversation_id}`
                     : n.post_id
                       ? `/post/${n.post_id}`
@@ -87,10 +88,16 @@ export default async function NotificationsPage() {
                         <b>{n.actor_display_name ?? 'Un voisin'}</b>{' '}
                         <span className="text-ink-700/70">{meta.verb}</span>
                       </div>
-                      {n.body && (
-                        <div className="text-xs text-ink-700/55 truncate mt-0.5">
-                          {n.type === 'message' || n.type === 'comment' ? `« ${n.body} »` : n.body}
+                      {n.type === 'call' ? (
+                        <div className="text-xs text-coral-500 font-semibold truncate mt-0.5">
+                          {n.body === 'video' ? '🎥 Appel vidéo manqué' : '📞 Appel audio manqué'}
                         </div>
+                      ) : (
+                        n.body && (
+                          <div className="text-xs text-ink-700/55 truncate mt-0.5">
+                            {n.type === 'message' || n.type === 'comment' ? `« ${n.body} »` : n.body}
+                          </div>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
