@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
+import { MessagesListRefresher } from '@/components/MessagesListRefresher';
 import { createClient } from '@/lib/supabase/server';
 import { type Conversation, timeAgo } from '@/lib/types';
 
@@ -37,6 +38,7 @@ export default async function MessagesPage() {
 
   return (
     <Shell>
+      <MessagesListRefresher uid={user.id} />
       <div className="max-w-2xl mx-auto">
         <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3">
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">Messages</h1>
