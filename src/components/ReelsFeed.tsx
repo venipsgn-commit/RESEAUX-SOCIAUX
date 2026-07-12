@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getClientPosition } from '@/lib/location';
 import type { Reel, CommentItem } from '@/lib/types';
 
 function fmtCount(n: number) {
@@ -176,6 +177,11 @@ function ReelCard({ reel, uid }: { reel: Reel; uid: string | null }) {
             {reel.avatar_emoji ?? '📍'}
           </div>
           <span className="font-extrabold text-sm drop-shadow">{reel.display_name ?? 'Voisin·e'}</span>
+          {reel.visibility === 'local' && (
+            <span className="text-[10px] font-bold bg-cream-50/20 backdrop-blur px-2 py-0.5 rounded-full">
+              🏘️ Quartier
+            </span>
+          )}
         </div>
         {reel.caption && <p className="text-sm mt-2 drop-shadow leading-snug">{reel.caption}</p>}
       </div>
@@ -237,6 +243,9 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ file: File; url: string } | null>(null);
+  const [caption, setCaption] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'local'>('public');
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -269,7 +278,7 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
     });
   }, [muted, reels]);
 
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
@@ -282,6 +291,19 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
       return;
     }
     setErr(null);
+    setCaption('');
+    setVisibility('public');
+    setPending({ file, url: URL.createObjectURL(file) });
+  }
+
+  function closeCompose() {
+    if (pending) URL.revokeObjectURL(pending.url);
+    setPending(null);
+  }
+
+  async function publish() {
+    if (!pending || uploading) return;
+    setErr(null);
     setUploading(true);
     try {
       const {
@@ -291,6 +313,7 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
         router.push('/connexion');
         return;
       }
+      const file = pending.file;
       const ext = file.name.split('.').pop() || 'mp4';
       const path = `${user.id}/reel-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -298,11 +321,20 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
         .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
       if (upErr) throw upErr;
       const { data } = supabase.storage.from('message-media').getPublicUrl(path);
-      const { error } = await supabase.from('reels').insert({ user_id: user.id, video_url: data.publicUrl });
+      const p = getClientPosition();
+      const { error } = await supabase.from('reels').insert({
+        user_id: user.id,
+        video_url: data.publicUrl,
+        caption: caption.trim() || null,
+        visibility,
+        lat: p.lat,
+        lng: p.lng,
+      });
       if (error) throw error;
+      closeCompose();
       router.refresh();
     } catch {
-      setErr("Échec de l'envoi de la vidéo.");
+      setErr('Échec de la publication.');
     } finally {
       setUploading(false);
     }
@@ -347,6 +379,85 @@ export function ReelsFeed({ reels }: { reels: Reel[] }) {
           {reels.map((r) => (
             <ReelCard key={r.id} reel={r} uid={uid} />
           ))}
+        </div>
+      )}
+
+      {/* Écran de publication (légende + visibilité) */}
+      {pending && (
+        <div className="absolute inset-0 z-40 bg-ink-900 text-cream-50 flex flex-col">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <button onClick={closeCompose} aria-label="Fermer" className="text-cream-50/80 text-xl w-8">
+              ✕
+            </button>
+            <span className="font-black">Nouveau réel</span>
+            <span className="w-8" />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4">
+            <div className="flex gap-3">
+              <video
+                src={pending.url}
+                muted
+                playsInline
+                className="w-24 h-36 object-cover rounded-2xl bg-black flex-shrink-0 border border-cream-50/10"
+              />
+              <textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                maxLength={200}
+                placeholder="Décris ton réel…"
+                className="flex-1 bg-transparent text-sm outline-none resize-none h-36 placeholder:text-cream-50/40"
+              />
+            </div>
+
+            <div className="mt-6">
+              <div className="text-[11px] uppercase tracking-wider text-cream-50/50 font-bold mb-2">
+                Qui peut voir ce réel ?
+              </div>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setVisibility('public')}
+                  className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition ${
+                    visibility === 'public' ? 'bg-forest-500/20 ring-1 ring-forest-500' : 'bg-cream-50/5'
+                  }`}
+                >
+                  <span className="text-2xl">🌍</span>
+                  <span className="flex-1">
+                    <span className="block font-bold text-sm">Public</span>
+                    <span className="block text-xs text-cream-50/60">Visible par tout le monde</span>
+                  </span>
+                  {visibility === 'public' && <span className="text-forest-400 font-black">✓</span>}
+                </button>
+                <button
+                  onClick={() => setVisibility('local')}
+                  className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition ${
+                    visibility === 'local' ? 'bg-forest-500/20 ring-1 ring-forest-500' : 'bg-cream-50/5'
+                  }`}
+                >
+                  <span className="text-2xl">🏘️</span>
+                  <span className="flex-1">
+                    <span className="block font-bold text-sm">Mon quartier</span>
+                    <span className="block text-xs text-cream-50/60">
+                      Seulement les voisins à moins de 500&nbsp;m
+                    </span>
+                  </span>
+                  {visibility === 'local' && <span className="text-forest-400 font-black">✓</span>}
+                </button>
+              </div>
+            </div>
+
+            {err && <div className="text-coral-500 text-xs mt-3 text-center">{err}</div>}
+          </div>
+
+          <div className="p-4 pb-[max(env(safe-area-inset-bottom),16px)]">
+            <button
+              onClick={publish}
+              disabled={uploading}
+              className="w-full py-3.5 bg-forest-500 text-white rounded-full font-extrabold shadow-lift active:scale-[0.98] transition disabled:opacity-50"
+            >
+              {uploading ? 'Publication…' : 'Publier'}
+            </button>
+          </div>
         </div>
       )}
     </div>

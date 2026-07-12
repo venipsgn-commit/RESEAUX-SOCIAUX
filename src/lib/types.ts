@@ -117,6 +117,7 @@ export type Reel = {
   comment_count: number;
   viewer_liked: boolean;
   viewer_saved: boolean;
+  visibility: 'public' | 'local';
 };
 
 export type CommentItem = {
