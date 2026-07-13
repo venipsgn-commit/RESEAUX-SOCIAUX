@@ -21,33 +21,84 @@ export const dynamic = 'force-dynamic';
 function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean }) {
   const meta = POST_TYPE_META[post.type];
   const price = formatPrice(post.price_cents);
+  const hasImage = Boolean(post.image_url) && post.type !== 'geolock';
+  const hasCta =
+    post.type === 'sell' || post.type === 'service' || post.type === 'event' || post.type === 'geolock';
 
   return (
-    <article className="bg-white rounded-3xl overflow-hidden border border-ink-900/5 shadow-soft">
-      <div className="px-4 py-3 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin">
-          {post.author_avatar_emoji}
+    <article className="bg-white rounded-2xl overflow-hidden border border-ink-900/5 shadow-soft">
+      {/* EN-TÊTE — façon Facebook */}
+      <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
+        <div className="relative flex-shrink-0">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin">
+            {post.author_avatar_emoji}
+          </div>
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-forest-500 rounded-full border-2 border-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-sm">{post.author_handle}</span>
-            <span className={`chip ${meta.chipClass}`}>{meta.label}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-[15px] leading-tight truncate">{post.author_handle}</span>
+            <span className={`chip ${meta.chipClass} flex-shrink-0`}>{meta.label}</span>
           </div>
-          <div className="text-[11px] text-ink-700/55">
-            Score <b className="text-forest-600">{post.author_neighbor_score}</b> · à{' '}
-            <b>{formatDistance(post.distance_m)}</b> · {timeAgo(post.created_at)}
+          <div className="flex items-center gap-1.5 text-[12px] text-ink-700/55 mt-0.5">
+            <span>{timeAgo(post.created_at)}</span>
+            <span className="w-0.5 h-0.5 rounded-full bg-ink-700/40" />
+            <span>📍 {formatDistance(post.distance_m)}</span>
+            <span className="w-0.5 h-0.5 rounded-full bg-ink-700/40" />
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="opacity-70"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
           </div>
         </div>
+        <button
+          aria-label="Options"
+          className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center text-ink-700/45 active:bg-ink-900/5 transition"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <circle cx="5" cy="12" r="1.7" />
+            <circle cx="12" cy="12" r="1.7" />
+            <circle cx="19" cy="12" r="1.7" />
+          </svg>
+        </button>
       </div>
 
+      {/* TEXTE — au-dessus de l'image, comme un statut Facebook */}
+      {post.type !== 'geolock' && (post.title || post.body) && (
+        <Link href={`/post/${post.id}`} className="block px-4 pb-2.5">
+          <p className="text-[15px] leading-snug text-ink-900 line-clamp-3">
+            <span className="font-bold">{post.title}</span>
+            {post.body && (
+              <span className="text-ink-900/85">
+                {post.title ? ' · ' : ''}
+                {post.body}
+              </span>
+            )}
+          </p>
+        </Link>
+      )}
+
+      {/* VISUEL — pleine largeur */}
       <Link
         href={`/post/${post.id}`}
         className="block aspect-square relative"
-        style={post.image_url && post.type !== 'geolock' ? undefined : { background: meta.gradient }}
+        style={hasImage ? undefined : { background: meta.gradient }}
       >
-        {post.image_url && post.type !== 'geolock' ? (
+        {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.image_url} alt={post.title} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={post.image_url!} alt={post.title} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-[120px]">
             {post.type === 'geolock' ? (
@@ -67,11 +118,8 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
             )}
           </div>
         )}
-        <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full text-[10px] font-bold text-ink-900">
-          🚶 {formatDistance(post.distance_m)}
-        </div>
         {price && (
-          <div className="absolute bottom-3.5 left-3.5 bg-white/95 backdrop-blur px-3.5 py-2 rounded-2xl">
+          <div className="absolute bottom-3.5 left-3.5 bg-white/95 backdrop-blur px-3.5 py-2 rounded-2xl shadow-soft">
             <div className="text-2xl font-black leading-none text-ink-900">{price}</div>
           </div>
         )}
@@ -86,54 +134,53 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
         )}
       </Link>
 
-      <div className="px-4 pt-3">
-        <ReactionBar
-          postId={post.id}
-          initialLiked={likedByMe}
-          initialSaved={false}
-          initialLikeCount={post.like_count}
-        />
-      </div>
-      <div className="px-4 pb-4 pt-2">
-        <Link href={`/post/${post.id}`} className="text-sm block">
-          <b>{post.author_handle}</b> {post.title}
-        </Link>
-        {post.type !== 'geolock' && post.body && (
-          <p className="text-sm text-ink-700/70 mt-0.5 line-clamp-2">{post.body}</p>
-        )}
-        {post.type === 'sell' && (
-          <Link
-            href={`/post/${post.id}`}
-            className="mt-3 block text-center w-full py-2.5 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft"
-          >
-            Acheter en escrow
-          </Link>
-        )}
-        {post.type === 'service' && (
-          <Link
-            href={`/post/${post.id}`}
-            className="mt-2 inline-block px-3 py-1.5 bg-coral-500 text-white rounded-full text-xs font-bold shadow-soft"
-          >
-            📅 Réserver
-          </Link>
-        )}
-        {post.type === 'event' && (
-          <Link
-            href={`/post/${post.id}`}
-            className="mt-2 block text-center w-full py-2.5 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft"
-          >
-            Je viens 🙋
-          </Link>
-        )}
-        {post.type === 'geolock' && (
-          <Link
-            href={`/post/${post.id}`}
-            className="mt-2 block text-center w-full py-2.5 bg-gradient-to-br from-lilac-300 to-lilac-500 text-white rounded-full font-extrabold text-sm shadow-soft"
-          >
-            🚶 M&apos;y rendre pour débloquer
-          </Link>
-        )}
-      </div>
+      {/* CTA spécifique au type d'annonce */}
+      {hasCta && (
+        <div className="px-4 pt-3">
+          {post.type === 'sell' && (
+            <Link
+              href={`/post/${post.id}`}
+              className="block text-center w-full py-2.5 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft"
+            >
+              Acheter en escrow
+            </Link>
+          )}
+          {post.type === 'service' && (
+            <Link
+              href={`/post/${post.id}`}
+              className="inline-block px-3 py-1.5 bg-coral-500 text-white rounded-full text-xs font-bold shadow-soft"
+            >
+              📅 Réserver
+            </Link>
+          )}
+          {post.type === 'event' && (
+            <Link
+              href={`/post/${post.id}`}
+              className="block text-center w-full py-2.5 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft"
+            >
+              Je viens 🙋
+            </Link>
+          )}
+          {post.type === 'geolock' && (
+            <Link
+              href={`/post/${post.id}`}
+              className="block text-center w-full py-2.5 bg-gradient-to-br from-lilac-300 to-lilac-500 text-white rounded-full font-extrabold text-sm shadow-soft"
+            >
+              🚶 M&apos;y rendre pour débloquer
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* PIED — résumé + J'aime / Commenter / Partager */}
+      <ReactionBar
+        variant="facebook"
+        postId={post.id}
+        initialLiked={likedByMe}
+        initialSaved={false}
+        initialLikeCount={post.like_count}
+        shareTitle={post.title}
+      />
     </article>
   );
 }
