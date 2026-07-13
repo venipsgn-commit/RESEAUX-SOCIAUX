@@ -4,6 +4,7 @@ import { NotifBell } from '@/components/NotifBell';
 import { MessagesBadge } from '@/components/MessagesBadge';
 import { InvitationsButton } from '@/components/InvitationsButton';
 import { NavIcon } from '@/components/NavIcons';
+import { Stories } from '@/components/Stories';
 import { ReactionBar } from '@/components/ReactionBar';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
@@ -266,41 +267,8 @@ export default async function VoisinagePage() {
             </div>
           </div>
 
-          {/* STORIES — voisins actifs, triés par distance */}
-          <div className="overflow-x-auto -mx-1">
-            <div className="flex gap-2.5 px-1 pb-1">
-              <div className="text-center flex-shrink-0 w-16">
-                <Link href={user ? '/compose' : '/connexion'}>
-                  <div
-                    className="story-ring"
-                    style={{ padding: 0, background: 'transparent', border: '2px dashed rgba(31,26,18,0.2)' }}
-                  >
-                    <div
-                      className="story-ring-inner"
-                      style={{ background: 'transparent', fontSize: 24, color: 'rgba(31,26,18,0.4)' }}
-                    >
-                      ＋
-                    </div>
-                  </div>
-                </Link>
-                <div className="text-[10px] mt-1 font-bold text-ink-700/70">Toi</div>
-              </div>
-              {neighbors.map((n, i) => (
-                <div key={n.author_id} className="text-center flex-shrink-0 w-16">
-                  <div className={`story-ring ${i === 0 ? 'story-ring-merged' : ''}`}>
-                    <div className="story-ring-inner">{n.author_avatar_emoji}</div>
-                  </div>
-                  <div
-                    className={`text-[10px] mt-1 font-bold truncate ${
-                      i === 0 ? 'text-sunset-500' : 'text-ink-700/70'
-                    }`}
-                  >
-                    {n.author_handle} · {formatDistance(n.distance_m)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* STORIES — façon Instagram (ajouter / lire les stories des voisins) */}
+          <Stories lat={pos.lat} lng={pos.lng} />
         </header>
 
         <div className="px-3 lg:px-8 py-4 space-y-4">
