@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { LogoutButton } from '@/components/LogoutButton';
-import { ProfileSocial } from '@/components/ProfileSocial';
+import { ProfileStats } from '@/components/ProfileStats';
+import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
 import { type Profile, POST_TYPE_META, type PostType } from '@/lib/types';
 
@@ -76,27 +77,18 @@ export default async function ProfilPage() {
                 {profile?.neighbor_score ?? 50}
               </div>
             </div>
-            <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-xl lg:text-2xl font-black">{stats.posts}</div>
-                <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  publications
-                </div>
-              </div>
-              <div>
-                <div className="text-xl lg:text-2xl font-black">{stats.followers}</div>
-                <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  abonnés
-                </div>
-              </div>
-              <div>
-                <div className="text-xl lg:text-2xl font-black">{stats.following}</div>
-                <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  abonnements
-                </div>
-              </div>
-            </div>
+            <ProfileStats
+              posts={stats.posts}
+              followers={stats.followers}
+              following={stats.following}
+            />
           </div>
+
+          {/* Emplacement des listes abonnés/abonnements (dépliées au clic) */}
+          <div id="profile-lists" />
+
+          {/* Invitations reçues (Accepter / Refuser) */}
+          <InvitationList />
 
           <div>
             <div className="font-extrabold">
@@ -116,9 +108,6 @@ export default async function ProfilPage() {
               <p className="hand text-lg text-coral-500 -mt-0.5">&quot;{profile.tagline}&quot;</p>
             )}
           </div>
-
-          {/* Connexions : invitations reçues + abonnés (privé) */}
-          <ProfileSocial />
 
           {/* AURA settings */}
           <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
