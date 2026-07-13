@@ -52,12 +52,21 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   const [mapReady, setMapReady] = useState(0);
 
   async function sayHi(userId: string) {
-    const { data, error } = await supabase.rpc('get_or_create_dm', { other: userId });
-    if (error || !data) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       router.push('/connexion');
       return;
     }
-    router.push(`/messages/${data}`);
+    // Invitation obligatoire avant de discuter (ou ouverture du chat si connectés)
+    const { data: res } = await supabase.rpc('request_follow', { other: userId });
+    if (res === 'accepted') {
+      const { data } = await supabase.rpc('get_or_create_dm', { other: userId });
+      if (data) router.push(`/messages/${data}`);
+    } else if (res === 'pending_out') {
+      alert('👋 Invitation envoyée ! Tu pourras discuter dès que la personne aura accepté.');
+    }
   }
 
   // Initialisation de la carte (une fois par position/rayon)

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { LogoutButton } from '@/components/LogoutButton';
+import { ProfileSocial } from '@/components/ProfileSocial';
 import { createClient } from '@/lib/supabase/server';
 import { type Profile, POST_TYPE_META, type PostType } from '@/lib/types';
 
@@ -39,19 +40,23 @@ export default async function ProfilPage() {
   }
 
   // ── Connecté : vraies données ─────────────────────────────────
-  const [{ data: profileData }, { data: myPosts }] = await Promise.all([
+  const [{ data: profileData }, { data: myPosts }, { data: statsData }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('posts')
       .select('id, type, emoji, title, status, image_url')
       .eq('author_id', user.id)
       .order('created_at', { ascending: false }),
+    supabase.rpc('profile_stats', { uid: user.id }),
   ]);
 
   const profile = profileData as Profile | null;
   const posts = myPosts ?? [];
-  const sales = posts.filter((p) => p.type === 'sell').length;
-  const services = posts.filter((p) => p.type === 'service').length;
+  const stats = (statsData?.[0] ?? { followers: 0, following: 0, posts: posts.length }) as {
+    followers: number;
+    following: number;
+    posts: number;
+  };
 
   return (
     <Shell>
@@ -73,21 +78,21 @@ export default async function ProfilPage() {
             </div>
             <div className="flex-1 grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="text-xl lg:text-2xl font-black">{sales}</div>
+                <div className="text-xl lg:text-2xl font-black">{stats.posts}</div>
                 <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  ventes
+                  publications
                 </div>
               </div>
               <div>
-                <div className="text-xl lg:text-2xl font-black">{services}</div>
+                <div className="text-xl lg:text-2xl font-black">{stats.followers}</div>
                 <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  services
+                  abonnés
                 </div>
               </div>
               <div>
-                <div className="text-xl lg:text-2xl font-black">{posts.length}</div>
+                <div className="text-xl lg:text-2xl font-black">{stats.following}</div>
                 <div className="text-[10px] text-ink-700/55 font-bold uppercase tracking-wider">
-                  posts
+                  abonnements
                 </div>
               </div>
             </div>
@@ -111,6 +116,9 @@ export default async function ProfilPage() {
               <p className="hand text-lg text-coral-500 -mt-0.5">&quot;{profile.tagline}&quot;</p>
             )}
           </div>
+
+          {/* Connexions : invitations reçues + abonnés (privé) */}
+          <ProfileSocial />
 
           {/* AURA settings */}
           <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">

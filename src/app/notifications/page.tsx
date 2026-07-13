@@ -10,6 +10,7 @@ const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   like: { icon: '❤️', verb: 'a aimé ton post' },
   comment: { icon: '🗨️', verb: 'a commenté ton post' },
   call: { icon: '📞', verb: "a essayé de t'appeler" },
+  follow: { icon: '👋', verb: 'veut faire connaissance' },
 };
 
 export default async function NotificationsPage() {
@@ -66,11 +67,19 @@ export default async function NotificationsPage() {
               {notifs.map((n) => {
                 const meta = TYPE_META[n.type];
                 const href =
-                  (n.type === 'message' || n.type === 'call') && n.conversation_id
-                    ? `/messages/${n.conversation_id}`
-                    : n.post_id
-                      ? `/post/${n.post_id}`
-                      : '#';
+                  n.type === 'follow'
+                    ? '/profil'
+                    : (n.type === 'message' || n.type === 'call') && n.conversation_id
+                      ? `/messages/${n.conversation_id}`
+                      : n.post_id
+                        ? `/post/${n.post_id}`
+                        : '#';
+                const verb =
+                  n.type === 'follow'
+                    ? n.body === 'accepted'
+                      ? 'a accepté ton invitation ✓'
+                      : 'veut faire connaissance 👋'
+                    : meta.verb;
                 return (
                   <Link
                     key={n.id}
@@ -86,13 +95,14 @@ export default async function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm">
                         <b>{n.actor_display_name ?? 'Un voisin'}</b>{' '}
-                        <span className="text-ink-700/70">{meta.verb}</span>
+                        <span className="text-ink-700/70">{verb}</span>
                       </div>
                       {n.type === 'call' ? (
                         <div className="text-xs text-coral-500 font-semibold truncate mt-0.5">
                           {n.body === 'video' ? '🎥 Appel vidéo manqué' : '📞 Appel audio manqué'}
                         </div>
                       ) : (
+                        n.type !== 'follow' &&
                         n.body && (
                           <div className="text-xs text-ink-700/55 truncate mt-0.5">
                             {n.type === 'message' || n.type === 'comment' ? `« ${n.body} »` : n.body}
