@@ -3,6 +3,7 @@ import { Shell } from '@/components/Shell';
 import { NotifBell } from '@/components/NotifBell';
 import { MessagesBadge } from '@/components/MessagesBadge';
 import { InvitationsButton } from '@/components/InvitationsButton';
+import { NavIcon } from '@/components/NavIcons';
 import { ReactionBar } from '@/components/ReactionBar';
 import { createClient } from '@/lib/supabase/server';
 import { getServerPosition } from '@/lib/getServerPosition';
@@ -207,8 +208,12 @@ export default async function VoisinagePage() {
               )}
               <InvitationsButton />
               <NotifBell />
-              <Link href="/messages" aria-label="Messages" className="relative text-xl">
-                💬
+              <Link
+                href="/messages"
+                aria-label="Messages"
+                className="relative flex items-center justify-center text-ink-900"
+              >
+                <NavIcon name="messages" size={24} />
                 <MessagesBadge />
               </Link>
             </div>

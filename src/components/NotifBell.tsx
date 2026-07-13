@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { NavIcon } from './NavIcons';
 
 /**
  * Cloche de notifications avec badge du nombre de non-lues, mis à jour en
@@ -64,17 +65,21 @@ export function NotifBell({ variant = 'inline' }: { variant?: 'inline' | 'floati
       <Link
         href="/notifications"
         aria-label="Notifications"
-        className="relative w-10 h-10 bg-cream-50/95 backdrop-blur-xl rounded-full shadow-soft flex items-center justify-center"
+        className="relative w-10 h-10 bg-cream-50/95 backdrop-blur-xl rounded-full shadow-soft flex items-center justify-center text-ink-900"
       >
-        🔔
+        <NavIcon name="notifications" size={22} />
         {badge}
       </Link>
     );
   }
 
   return (
-    <Link href="/notifications" aria-label="Notifications" className="relative text-xl">
-      🔔
+    <Link
+      href="/notifications"
+      aria-label="Notifications"
+      className="relative flex items-center justify-center text-ink-900"
+    >
+      <NavIcon name="notifications" size={24} />
       {badge}
     </Link>
   );
