@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from '@/lib/toast';
 import { type PostType } from '@/lib/types';
 
 export type MapPost = {
@@ -65,7 +66,11 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       const { data } = await supabase.rpc('get_or_create_dm', { other: userId });
       if (data) router.push(`/messages/${data}`);
     } else if (res === 'pending_out') {
-      alert('👋 Invitation envoyée ! Tu pourras discuter dès que la personne aura accepté.');
+      toast({
+        icon: '👋',
+        title: 'Invitation envoyée !',
+        text: 'Tu pourras discuter dès que la personne aura accepté.',
+      });
     }
   }
 

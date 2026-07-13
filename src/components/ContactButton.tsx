@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from '@/lib/toast';
 
 type Status = 'loading' | 'none' | 'pending_out' | 'pending_in' | 'accepted' | 'self';
 
@@ -45,6 +46,11 @@ export function ContactButton({ otherId, otherHandle }: { otherId: string; other
     } else {
       setStatus('pending_out');
       setBusy(false);
+      toast({
+        icon: '👋',
+        title: 'Invitation envoyée !',
+        text: `Tu pourras discuter dès que ${otherHandle} aura accepté.`,
+      });
     }
   }
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { MessagesListRefresher } from '@/components/MessagesListRefresher';
+import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
 import { type Conversation, timeAgo } from '@/lib/types';
 
@@ -43,6 +44,8 @@ export default async function MessagesPage() {
         <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3">
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">Messages</h1>
         </header>
+
+        <InvitationList title="Demandes de connexion" />
 
         <div className="px-2 lg:px-6 py-2">
           {conversations.length === 0 ? (

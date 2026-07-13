@@ -8,6 +8,7 @@ import { LocationGate } from './LocationGate';
 import { NotifWatcher } from './NotifWatcher';
 import { MessagesBadge } from './MessagesBadge';
 import { CallProvider } from './CallProvider';
+import { Toaster } from './Toaster';
 import { NavIcon, PlusIcon } from './NavIcons';
 
 type TabDef = { href: string; label: string; icon: string };
@@ -151,6 +152,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Son + bandeau à l'arrivée d'une notification (global, toutes pages) */}
       <NotifWatcher />
+
+      {/* Pop-ups AURA (invitations envoyées, etc.) */}
+      <Toaster />
 
       {/* MOBILE BOTTOM TAB BAR */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1.5 pt-2 pb-[max(env(safe-area-inset-bottom),18px)] bg-cream-50/95 backdrop-blur-xl border-t border-ink-900/5 shadow-tab">

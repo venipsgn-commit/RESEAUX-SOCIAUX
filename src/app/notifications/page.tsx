@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
+import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
 import { type NotifItem, timeAgo } from '@/lib/types';
 
@@ -52,6 +53,8 @@ export default async function NotificationsPage() {
         <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3">
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">Notifications</h1>
         </header>
+
+        <InvitationList />
 
         <div className="px-2 lg:px-6 py-2">
           {notifs.length === 0 ? (
