@@ -58,6 +58,7 @@ export type Profile = {
   tagline: string | null;
   avatar_emoji: string;
   avatar_url: string | null;
+  cover_url: string | null;
   quartier: string | null;
   lat: number | null;
   lng: number | null;

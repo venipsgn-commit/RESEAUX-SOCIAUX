@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { LogoutButton } from '@/components/LogoutButton';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { CoverUpload } from '@/components/CoverUpload';
 import { ProfileStats } from '@/components/ProfileStats';
 import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
@@ -67,12 +68,9 @@ export default async function ProfilPage() {
     <Shell>
       <div className="max-w-3xl mx-auto pb-10">
         {/* ── COUVERTURE ─────────────────────────────────────────── */}
-        <div className="relative h-36 lg:h-52 bg-gradient-to-br from-forest-400 via-forest-500 to-forest-600 overflow-hidden">
-          {/* Anneaux « aura » décoratifs */}
-          <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full border border-white/15" />
-          <div className="absolute -top-8 -right-2 w-40 h-40 rounded-full border border-white/10" />
-          <div className="absolute -bottom-24 -left-10 w-56 h-56 rounded-full border border-white/10" />
-          <div className="absolute top-3 right-3 lg:top-4 lg:right-4">
+        <div className="relative h-36 lg:h-52">
+          <CoverUpload coverUrl={profile?.cover_url ?? null} />
+          <div className="absolute top-3 right-3 lg:top-4 lg:right-4 z-10">
             <LogoutButton />
           </div>
         </div>
