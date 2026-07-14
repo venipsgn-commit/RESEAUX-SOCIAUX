@@ -77,7 +77,7 @@ export type Conversation = {
   last_attachment_type: AttachmentType | null;
 };
 
-export type AttachmentType = 'image' | 'video' | 'audio' | 'call';
+export type AttachmentType = 'image' | 'video' | 'audio' | 'call' | 'story';
 
 export type Message = {
   id: string;

@@ -84,7 +84,9 @@ export default async function MessagesPage() {
                         ? '🎥 Vidéo'
                         : c.last_attachment_type === 'audio'
                           ? '🎤 Message vocal'
-                          : null;
+                          : c.last_attachment_type === 'story'
+                            ? '📸 Réponse à une story'
+                            : null;
                   preview = c.last_body || mediaLabel;
                 }
                 return (

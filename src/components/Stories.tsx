@@ -666,20 +666,16 @@ function StoryViewer({
     const text = replyText.trim();
     if (!text) return;
     setReplySending(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setReplySending(false);
-      return;
-    }
-    const { error } = await supabase
-      .from('story_comments')
-      .insert({ story_id: story.id, user_id: user.id, body: text });
+    // Envoie la réponse comme un vrai message : le voisin la reçoit dans ses
+    // messages et peut te répondre (façon Instagram).
+    const { error } = await supabase.rpc('reply_to_story', {
+      p_story_id: story.id,
+      p_body: text,
+    });
     setReplySending(false);
     if (!error) {
       setReplyText('');
-      toast({ icon: '💬', title: 'Réponse envoyée', text: `à ${group.handle}` });
+      toast({ icon: '💬', title: 'Réponse envoyée', text: `${group.handle} peut te répondre en message.` });
     } else {
       toast({ icon: '⚠️', title: 'Oups', text: "La réponse n'est pas partie." });
     }

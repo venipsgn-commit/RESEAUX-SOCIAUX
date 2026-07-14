@@ -340,6 +340,29 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                 {m.attachment_type === 'audio' && m.attachment_url && (
                   <VoiceMessage url={m.attachment_url} mine={mine} />
                 )}
+                {m.attachment_type === 'story' && m.attachment_url && (
+                  <div className="mb-1">
+                    <div className={`text-[10px] font-semibold mb-1 px-1 ${mine ? 'text-cream-50/60' : 'text-ink-700/50'}`}>
+                      ↩︎ Réponse à la story
+                    </div>
+                    {/\.(mp4|mov|webm|m4v|ogg)(\?|#|$)/i.test(m.attachment_url) ? (
+                      <video
+                        src={`${m.attachment_url}#t=0.1`}
+                        className="rounded-2xl max-h-44 w-auto max-w-full"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.attachment_url}
+                        alt="story"
+                        className="rounded-2xl max-h-44 w-auto max-w-full object-cover"
+                      />
+                    )}
+                  </div>
+                )}
                 {m.body && (
                   <div className={`whitespace-pre-wrap break-words ${hasMedia ? 'px-2 pt-1.5' : ''}`}>
                     {m.body}
