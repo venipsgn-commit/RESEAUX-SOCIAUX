@@ -40,6 +40,27 @@ export default async function InvitationsPage() {
           <h1 className="text-xl lg:text-2xl font-black tracking-tight">Invitations</h1>
         </header>
 
+        <div className="px-4 lg:px-8 pt-4">
+          <Link
+            href="/voisins"
+            className="flex items-center justify-between gap-3 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-2xl px-4 py-3.5 shadow-soft"
+          >
+            <div className="flex items-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+              <div>
+                <div className="font-extrabold text-sm">Découvrir mes voisins</div>
+                <div className="text-[11px] text-white/80">Invite-les à devenir amis</div>
+              </div>
+            </div>
+            <span className="text-lg">→</span>
+          </Link>
+        </div>
+
         <div className="pt-2">
           <InvitationList title="Reçues" />
         </div>

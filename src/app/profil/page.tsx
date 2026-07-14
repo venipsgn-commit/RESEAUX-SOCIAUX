@@ -131,30 +131,34 @@ export default async function ProfilPage() {
           {/* Boutons d'action */}
           <div className="flex gap-2.5 mt-4">
             <Link
-              href="/compose"
+              href="/profil/modifier"
               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
+              </svg>
+              Modifier le profil
+            </Link>
+            <Link
+              href="/compose"
+              aria-label="Publier"
+              className="w-11 flex items-center justify-center bg-sand-200 text-ink-900 rounded-full shadow-soft"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              Publier
             </Link>
             <Link
-              href="/voisinage"
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-sand-200 text-ink-900 rounded-full font-extrabold text-sm shadow-soft"
-            >
-              📸 Ma story
-            </Link>
-            <Link
-              href="/invitations"
-              aria-label="Invitations"
+              href="/voisins"
+              aria-label="Mes voisins"
               className="w-11 flex items-center justify-center bg-sand-200 text-ink-900 rounded-full shadow-soft"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
               </svg>
             </Link>
           </div>

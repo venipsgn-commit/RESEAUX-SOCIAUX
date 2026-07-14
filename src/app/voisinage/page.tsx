@@ -195,18 +195,29 @@ export default async function VoisinagePage() {
   const supabase = createClient();
   const pos = getServerPosition();
 
-  const [{ data: posts }, { data: userData }] = await Promise.all([
-    supabase.rpc('posts_nearby', {
-      user_lat: pos.lat,
-      user_lng: pos.lng,
-      radius_m: DEFAULT_RADIUS_M,
-      max_results: 50,
-    }),
-    supabase.auth.getUser(),
-  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Rayon = aura de l'utilisateur (réglable dans le profil), sinon défaut.
+  let radius = DEFAULT_RADIUS_M;
+  if (user) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('aura_radius_m')
+      .eq('id', user.id)
+      .single();
+    if (prof?.aura_radius_m) radius = prof.aura_radius_m;
+  }
+
+  const { data: posts } = await supabase.rpc('posts_nearby', {
+    user_lat: pos.lat,
+    user_lng: pos.lng,
+    radius_m: radius,
+    max_results: 50,
+  });
 
   const nearbyPosts = (posts ?? []) as NearbyPost[];
-  const user = userData?.user ?? null;
 
   // Posts déjà likés par l'utilisateur (pour préremplir les cœurs)
   let likedIds = new Set<string>();
@@ -259,6 +270,18 @@ export default async function VoisinagePage() {
                   Rejoindre
                 </Link>
               )}
+              <Link
+                href="/voisins"
+                aria-label="Découvrir mes voisins"
+                className="relative flex items-center justify-center text-ink-900"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+              </Link>
               <InvitationsButton />
               <NotifBell />
               <Link
@@ -273,7 +296,7 @@ export default async function VoisinagePage() {
           </div>
 
           {/* STORIES — façon Instagram (ajouter / lire les stories des voisins) */}
-          <Stories lat={pos.lat} lng={pos.lng} />
+          <Stories lat={pos.lat} lng={pos.lng} radius={radius} />
         </header>
 
         <div className="px-3 lg:px-8 py-4 space-y-4">

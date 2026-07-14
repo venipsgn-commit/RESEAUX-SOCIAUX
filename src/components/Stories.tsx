@@ -138,7 +138,7 @@ function StoryThumb({ story, dim = false }: { story: StoryRow; dim?: boolean }) 
  * - Lecteur plein écran : progression, avance auto, tap gauche/droite,
  *   glisser pour changer de voisin, J'aime ❤️ et nombre de vues 👁.
  */
-export function Stories({ lat, lng }: { lat: number; lng: number }) {
+export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; radius?: number }) {
   const supabase = createClient();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -152,10 +152,10 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
     const { data } = await supabase.rpc('stories_feed', {
       user_lat: lat,
       user_lng: lng,
-      radius_m: 500,
+      radius_m: radius,
     });
     setGroups(groupStories((data as StoryRow[]) ?? []));
-  }, [supabase, lat, lng]);
+  }, [supabase, lat, lng, radius]);
 
   useEffect(() => {
     load();

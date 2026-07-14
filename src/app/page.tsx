@@ -15,17 +15,32 @@ export default async function MapPage() {
   const supabase = createClient();
   const pos = getServerPosition();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Rayon = aura de l'utilisateur (réglable dans le profil), sinon défaut.
+  let radius = DEFAULT_RADIUS_M;
+  if (user) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('aura_radius_m')
+      .eq('id', user.id)
+      .single();
+    if (prof?.aura_radius_m) radius = prof.aura_radius_m;
+  }
+
   const [{ data }, { data: peopleData }] = await Promise.all([
     supabase.rpc('posts_nearby', {
       user_lat: pos.lat,
       user_lng: pos.lng,
-      radius_m: DEFAULT_RADIUS_M,
+      radius_m: radius,
       max_results: 50,
     }),
     supabase.rpc('people_nearby', {
       user_lat: pos.lat,
       user_lng: pos.lng,
-      radius_m: DEFAULT_RADIUS_M,
+      radius_m: radius,
     }),
   ]);
   const posts = (data ?? []) as NearbyPost[];
@@ -48,7 +63,7 @@ export default async function MapPage() {
       <div className="relative h-[calc(100dvh-88px)] lg:h-screen overflow-hidden">
         <MapView
           center={{ lat: pos.lat, lng: pos.lng }}
-          radiusM={DEFAULT_RADIUS_M}
+          radiusM={radius}
           posts={mapPosts}
           people={people}
         />
