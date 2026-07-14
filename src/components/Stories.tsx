@@ -82,6 +82,29 @@ function EyeIcon() {
   );
 }
 
+function SpeakerIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      {muted ? (
+        <path d="M23 9l-6 6M17 9l6 6" />
+      ) : (
+        <>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M19 5a9 9 0 0 1 0 14" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** Détecte une story vidéo d'après l'extension de l'URL. */
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(url);
+}
+
+const QUICK_REACTIONS = ['😂', '😮', '😍', '😢', '🔥', '👏'];
+
 /**
  * Barre de stories façon Instagram en tête du Voisinage.
  * - « Toi » : choisir une photo → écran d'aperçu (légende) → publier.
@@ -95,7 +118,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [open, setOpen] = useState<number | null>(null);
-  const [pending, setPending] = useState<{ file: File; url: string } | null>(null);
+  const [pending, setPending] = useState<{ file: File; url: string; isVideo: boolean } | null>(null);
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
 
@@ -131,7 +154,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
     e.target.value = '';
     if (!file) return;
     setCaption('');
-    setPending({ file, url: URL.createObjectURL(file) });
+    setPending({ file, url: URL.createObjectURL(file), isVideo: file.type.startsWith('video') });
   }
 
   function closeComposer() {
@@ -192,7 +215,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
 
   return (
     <>
-      <input ref={fileRef} type="file" accept="image/*" onChange={onPick} className="hidden" />
+      <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onPick} className="hidden" />
 
       <div className="overflow-x-auto -mx-1 [&::-webkit-scrollbar]:hidden">
         <div className="flex gap-3 px-1 pb-1">
@@ -251,6 +274,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
       {pending && (
         <StoryComposer
           url={pending.url}
+          isVideo={pending.isVideo}
           caption={caption}
           setCaption={setCaption}
           uploading={uploading}
@@ -275,6 +299,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
 // ── Écran d'aperçu / composition ───────────────────────────────────────
 function StoryComposer({
   url,
+  isVideo,
   caption,
   setCaption,
   uploading,
@@ -282,6 +307,7 @@ function StoryComposer({
   onPublish,
 }: {
   url: string;
+  isVideo: boolean;
   caption: string;
   setCaption: (v: string) => void;
   uploading: boolean;
@@ -301,8 +327,19 @@ function StoryComposer({
 
   return createPortal(
     <div className="fixed inset-0 z-[130] bg-black flex flex-col">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="Aperçu" className="absolute inset-0 w-full h-full object-contain" />
+      {isVideo ? (
+        <video
+          src={url}
+          className="absolute inset-0 w-full h-full object-contain"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="Aperçu" className="absolute inset-0 w-full h-full object-contain" />
+      )}
 
       {/* Haut : fermer + titre */}
       <div className="relative z-10 flex items-center justify-between px-4 pt-4 bg-gradient-to-b from-black/55 to-transparent pb-8">
@@ -370,12 +407,16 @@ function StoryViewer({
   const [paused, setPaused] = useState(false);
   const [likes, setLikes] = useState<Record<string, { liked: boolean; count: number }>>({});
   const [viewers, setViewers] = useState<
-    { handle: string; avatar_emoji: string; liked: boolean }[] | null
+    { handle: string; avatar_emoji: string; liked: boolean; reaction: string | null }[] | null
   >(null);
   const [burst, setBurst] = useState(0);
+  const [reactBurst, setReactBurst] = useState<{ id: number; emoji: string } | null>(null);
+  const [muted, setMuted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const group = groups[gi];
   const story = group?.stories[si];
+  const isVid = story ? isVideoUrl(story.image_url) : false;
 
   // Navigation dans une même personne (tap) ------------------------------
   function next() {
@@ -493,21 +534,38 @@ function StoryViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story?.id]);
 
-  // Avance automatique (5 s) — en pause si on maintient ou si la liste des vues est ouverte
+  // Avance automatique (5 s) pour les PHOTOS — en pause si on maintient / vues ouvertes
   useEffect(() => {
-    if (!story || paused || viewers) return;
+    if (!story || isVid || paused || viewers) return;
     const DURATION = 5000;
     const STEP = 40;
     const t = setInterval(() => {
       setProgress((p) => Math.min(100, p + (STEP / DURATION) * 100));
     }, STEP);
     return () => clearInterval(t);
-  }, [story?.id, paused, viewers]);
+  }, [story?.id, isVid, paused, viewers]);
 
   useEffect(() => {
     if (progress >= 100) nextRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
+
+  // VIDÉO : lecture/pause selon l'état (maintien, liste des vues)
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !isVid) return;
+    if (paused || viewers) {
+      v.pause();
+    } else {
+      v.play().catch(() => {
+        // autoplay avec son bloqué → on coupe le son et on relance
+        v.muted = true;
+        setMuted(true);
+        v.play().catch(() => {});
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused, viewers, story?.id, isVid]);
 
   async function deleteStory() {
     if (!story) return;
@@ -536,16 +594,32 @@ function StoryViewer({
     }
   }
 
+  async function react(emoji: string) {
+    if (!story || story.is_mine) return;
+    setReactBurst({ id: Date.now(), emoji });
+    setTimeout(() => setReactBurst((r) => (r && Date.now() - r.id > 1000 ? null : r)), 1200);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from('story_reactions')
+      .upsert({ story_id: story.id, user_id: user.id, emoji }, { onConflict: 'story_id,user_id' });
+  }
+
   async function openViewers() {
     if (!story) return;
     setPaused(true);
     const { data } = await supabase.rpc('story_viewers', { p_story_id: story.id });
     setViewers(
-      ((data as { handle: string; avatar_emoji: string; liked: boolean }[]) ?? []).map((v) => ({
-        handle: v.handle,
-        avatar_emoji: v.avatar_emoji,
-        liked: v.liked,
-      })),
+      ((data as { handle: string; avatar_emoji: string; liked: boolean; reaction: string | null }[]) ?? []).map(
+        (v) => ({
+          handle: v.handle,
+          avatar_emoji: v.avatar_emoji,
+          liked: v.liked,
+          reaction: v.reaction,
+        }),
+      ),
     );
   }
   function closeViewers() {
@@ -563,13 +637,30 @@ function StoryViewer({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={story.image_url}
-        alt=""
-        className="max-h-full max-w-full w-auto h-auto object-contain"
-        draggable={false}
-      />
+      {isVid ? (
+        <video
+          key={story.id}
+          ref={videoRef}
+          src={story.image_url}
+          className="max-h-full max-w-full w-auto h-auto object-contain"
+          autoPlay
+          playsInline
+          muted={muted}
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            if (v.duration) setProgress(Math.min(99.5, (v.currentTime / v.duration) * 100));
+          }}
+          onEnded={() => nextRef.current()}
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={story.image_url}
+          alt=""
+          className="max-h-full max-w-full w-auto h-auto object-contain"
+          draggable={false}
+        />
+      )}
 
       {/* Zones de tap (précédent / suivant) + pause au maintien.
           Double-tap = J'aime (façon Instagram). */}
@@ -599,6 +690,18 @@ function StoryViewer({
           <div className="animate-heart-burst" style={{ filter: 'drop-shadow(0 6px 24px rgba(0,0,0,0.45))' }}>
             <HeartIcon filled size={130} />
           </div>
+        </div>
+      )}
+
+      {/* Emoji de réaction qui s'envole */}
+      {reactBurst && (
+        <div
+          key={reactBurst.id}
+          className="absolute inset-x-0 bottom-28 z-30 flex items-center justify-center pointer-events-none"
+        >
+          <span className="animate-react-float text-7xl" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.4))' }}>
+            {reactBurst.emoji}
+          </span>
         </div>
       )}
 
@@ -632,6 +735,15 @@ function StoryViewer({
               {story.distance_m != null && ` · 📍 ${Math.round(story.distance_m)}m`}
             </div>
           </div>
+          {isVid && (
+            <button
+              onClick={() => setMuted((m) => !m)}
+              aria-label={muted ? 'Activer le son' : 'Couper le son'}
+              className="text-white/90 p-1.5"
+            >
+              <SpeakerIcon muted={muted} />
+            </button>
+          )}
           {group.is_mine && (
             <button onClick={deleteStory} aria-label="Supprimer" className="text-white/85 p-1.5 text-lg">
               🗑️
@@ -645,11 +757,28 @@ function StoryViewer({
         </div>
       </div>
 
-      {/* Légende + barre du bas (J'aime ❤️ / vues 👁) */}
+      {/* Légende + réactions rapides + barre du bas (J'aime ❤️ / vues 👁) */}
       <div className="absolute bottom-0 inset-x-0 z-30 px-4 pb-7 pt-12 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
         {story.caption && (
           <p className="text-white text-[15px] font-medium text-center drop-shadow mb-3">{story.caption}</p>
         )}
+
+        {/* Réactions rapides (stories des voisins) */}
+        {!story.is_mine && (
+          <div className="flex items-center justify-center gap-1.5 mb-3">
+            {QUICK_REACTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => react(emoji)}
+                aria-label={`Réagir ${emoji}`}
+                className="pointer-events-auto text-[30px] leading-none px-1 active:scale-125 transition"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           {story.is_mine ? (
             <button
@@ -715,6 +844,7 @@ function StoryViewer({
                       {v.avatar_emoji}
                     </div>
                     <span className="font-bold text-sm text-ink-900 flex-1">{v.handle}</span>
+                    {v.reaction && <span className="text-xl" title="A réagi">{v.reaction}</span>}
                     {v.liked && (
                       <span className="text-[#ff3b5c]" title="A admiré ta story">
                         <HeartIcon filled size={18} />
