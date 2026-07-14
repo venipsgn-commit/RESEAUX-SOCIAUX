@@ -236,7 +236,9 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
         return { ...g, stories, hasUnseen: stories.some((s) => !s.seen && !s.is_mine) };
       }),
     );
-    supabase.rpc('mark_story_seen', { p_story_id: storyId });
+    // IMPORTANT : une requête supabase ne part que si on l'attend/.then() —
+    // sinon le « vu » n'est jamais enregistré et l'anneau redevient coloré.
+    void supabase.rpc('mark_story_seen', { p_story_id: storyId }).then(() => {});
   }
 
   return (
@@ -485,6 +487,17 @@ function StoryViewer({
   const nextRef = useRef(next);
   nextRef.current = next;
 
+  // Avance AUTOMATIQUE : à la fin des stories de la personne ouverte, on ferme
+  // (on n'enchaîne PAS sur les voisins, sinon on marquerait « vues » des
+  // stories qu'on n'a pas vraiment regardées).
+  function autoAdvance() {
+    if (!group) return onClose();
+    if (si < group.stories.length - 1) setSi(si + 1);
+    else onClose();
+  }
+  const autoRef = useRef(autoAdvance);
+  autoRef.current = autoAdvance;
+
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const swipedRef = useRef(false);
   function onTouchStart(e: React.TouchEvent) {
@@ -581,7 +594,7 @@ function StoryViewer({
   }, [story?.id, isVid, paused, viewers, comments]);
 
   useEffect(() => {
-    if (progress >= 100) nextRef.current();
+    if (progress >= 100) autoRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
@@ -722,7 +735,7 @@ function StoryViewer({
             const v = e.currentTarget;
             if (v.duration) setProgress(Math.min(99.5, (v.currentTime / v.duration) * 100));
           }}
-          onEnded={() => nextRef.current()}
+          onEnded={() => autoRef.current()}
         />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
