@@ -107,10 +107,11 @@ function isVideoUrl(url: string): boolean {
 const QUICK_REACTIONS = ['😂', '😮', '😍', '😢', '🔥', '👏'];
 
 /** Miniature ronde du contenu de la story (façon Instagram). */
-function StoryThumb({ story }: { story: StoryRow }) {
+function StoryThumb({ story, dim = false }: { story: StoryRow; dim?: boolean }) {
+  const cls = `w-full h-full object-cover ${dim ? 'story-thumb--seen' : ''}`;
   if (isVideoUrl(story.image_url)) {
     return (
-      <div className="w-full h-full relative">
+      <div className={`w-full h-full relative ${dim ? 'story-thumb--seen' : ''}`}>
         <video
           src={`${story.image_url}#t=0.1`}
           className="w-full h-full object-cover"
@@ -127,7 +128,7 @@ function StoryThumb({ story }: { story: StoryRow }) {
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={story.image_url} alt="" className="w-full h-full object-cover" />;
+  return <img src={story.image_url} alt="" className={cls} />;
 }
 
 /**
@@ -253,7 +254,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
                 aria-label={mine ? 'Voir ma story' : 'Ajouter une story'}
               >
                 {mine ? (
-                  <div className={`story-ring ${mine.hasUnseen ? '' : 'story-ring--seen'}`}>
+                  <div className="story-ring">
                     <div className="story-ring-inner overflow-hidden">
                       <StoryThumb story={mine.stories[mine.stories.length - 1]} />
                     </div>
@@ -288,7 +289,7 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
             >
               <div className={`story-ring ${g.hasUnseen ? '' : 'story-ring--seen'}`}>
                 <div className="story-ring-inner overflow-hidden">
-                  <StoryThumb story={g.stories[g.stories.length - 1]} />
+                  <StoryThumb story={g.stories[g.stories.length - 1]} dim={!g.hasUnseen} />
                 </div>
               </div>
               <div className="text-[10px] mt-1 font-bold truncate text-ink-700/70">

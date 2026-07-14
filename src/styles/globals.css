@@ -204,9 +204,13 @@ body {
   background: linear-gradient(135deg, #ffd6a5, #ff9a3c);
   animation: pulse 2s ease-in-out infinite;
 }
-/* Anneau déjà vu (gris, façon Instagram) */
+/* Anneau déjà vu (gris franc, façon Instagram) */
 .story-ring--seen {
-  background: #d6cdbe;
+  background: #b4a89a;
+}
+/* Miniature atténuée quand la story est déjà vue */
+.story-thumb--seen {
+  opacity: 0.55;
 }
 /* Bouton "ajouter" : anneau pointillé, intérieur transparent */
 .story-ring--add {
