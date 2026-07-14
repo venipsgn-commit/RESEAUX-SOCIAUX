@@ -105,6 +105,30 @@ function isVideoUrl(url: string): boolean {
 
 const QUICK_REACTIONS = ['😂', '😮', '😍', '😢', '🔥', '👏'];
 
+/** Miniature ronde du contenu de la story (façon Instagram). */
+function StoryThumb({ story }: { story: StoryRow }) {
+  if (isVideoUrl(story.image_url)) {
+    return (
+      <div className="w-full h-full relative">
+        <video
+          src={`${story.image_url}#t=0.1`}
+          className="w-full h-full object-cover"
+          muted
+          playsInline
+          preload="metadata"
+        />
+        <span className="absolute inset-0 flex items-center justify-center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}>
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </span>
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={story.image_url} alt="" className="w-full h-full object-cover" />;
+}
+
 /**
  * Barre de stories façon Instagram en tête du Voisinage.
  * - « Toi » : choisir une photo → écran d'aperçu (légende) → publier.
@@ -229,7 +253,9 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
               >
                 {mine ? (
                   <div className={`story-ring ${mine.hasUnseen ? '' : 'story-ring--seen'}`}>
-                    <div className="story-ring-inner">{mine.avatar_emoji}</div>
+                    <div className="story-ring-inner overflow-hidden">
+                      <StoryThumb story={mine.stories[mine.stories.length - 1]} />
+                    </div>
                   </div>
                 ) : (
                   <div className="story-ring story-ring--add">
@@ -260,7 +286,9 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
               className="text-center flex-shrink-0 w-16"
             >
               <div className={`story-ring ${g.hasUnseen ? '' : 'story-ring--seen'}`}>
-                <div className="story-ring-inner">{g.avatar_emoji}</div>
+                <div className="story-ring-inner overflow-hidden">
+                  <StoryThumb story={g.stories[g.stories.length - 1]} />
+                </div>
               </div>
               <div className="text-[10px] mt-1 font-bold truncate text-ink-700/70">
                 {g.handle} · {timeAgo(g.stories[g.stories.length - 1].created_at)}
