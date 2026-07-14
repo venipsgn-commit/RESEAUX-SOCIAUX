@@ -113,7 +113,9 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
     setUploading(true);
     try {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `stories/${user.id}/${Date.now()}.${ext}`;
+      // Le 1er dossier doit être l'id de l'utilisateur (règle de sécurité du
+      // bucket message-media), sinon l'upload est refusé.
+      const path = `${user.id}/story-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('message-media')
         .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
