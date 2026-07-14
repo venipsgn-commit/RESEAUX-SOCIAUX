@@ -83,6 +83,19 @@ export function Stories({ lat, lng }: { lat: number; lng: number }) {
     load();
   }, [supabase, load]);
 
+  // Mise à jour en direct : une nouvelle story d'un voisin apparaît sans
+  // recharger (RLS limite déjà aux stories non expirées ; le RPC re-filtre
+  // par distance).
+  useEffect(() => {
+    const channel = supabase
+      .channel('stories-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => load())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, load]);
+
   const mine = groups.find((g) => g.is_mine) ?? null;
   const others = groups.filter((g) => !g.is_mine);
 
