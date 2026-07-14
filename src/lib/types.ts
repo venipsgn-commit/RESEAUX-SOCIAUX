@@ -19,6 +19,7 @@ export type NearbyPost = {
   author_handle: string;
   author_display_name: string;
   author_avatar_emoji: string;
+  author_avatar_url: string | null;
   author_neighbor_score: number;
   like_count: number;
 };
@@ -56,6 +57,7 @@ export type Profile = {
   bio: string | null;
   tagline: string | null;
   avatar_emoji: string;
+  avatar_url: string | null;
   quartier: string | null;
   lat: number | null;
   lng: number | null;

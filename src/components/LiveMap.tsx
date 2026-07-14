@@ -21,6 +21,7 @@ export type MapPerson = {
   handle: string;
   display_name: string;
   avatar_emoji: string;
+  avatar_url?: string | null;
   lat: number;
   lng: number;
   is_online: boolean;
@@ -181,11 +182,14 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
 
     people.forEach((person) => {
       const firstName = person.display_name.split(' ')[0];
+      const avatarInner = person.avatar_url
+        ? `<img src="${person.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;" />`
+        : person.avatar_emoji;
       const icon = L.divIcon({
         className: '',
         html: `
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;">
-            <div class="${person.is_online ? 'snap-online' : ''}" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#fdfaf5,#f5efe3);border:3px solid ${person.is_online ? '#2d5a3d' : '#fff'};box-shadow:0 6px 14px rgba(31,26,18,0.28);display:flex;align-items:center;justify-content:center;font-size:23px;">${person.avatar_emoji}</div>
+            <div class="${person.is_online ? 'snap-online' : ''}" style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#fdfaf5,#f5efe3);border:3px solid ${person.is_online ? '#2d5a3d' : '#fff'};box-shadow:0 6px 14px rgba(31,26,18,0.28);display:flex;align-items:center;justify-content:center;font-size:23px;">${avatarInner}</div>
             <div style="background:#1f1a12;color:#fdfaf5;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(31,26,18,0.2);">${firstName}${person.is_online ? ' 🟢' : ''}</div>
           </div>`,
         iconSize: [60, 64],

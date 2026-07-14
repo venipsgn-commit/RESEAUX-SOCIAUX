@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 import { LogoutButton } from '@/components/LogoutButton';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { ProfileStats } from '@/components/ProfileStats';
 import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
@@ -78,14 +79,11 @@ export default async function ProfilPage() {
 
         {/* ── EN-TÊTE PROFIL ─────────────────────────────────────── */}
         <div className="px-4 lg:px-8 -mt-14">
-          <div className="relative w-28 h-28 lg:w-32 lg:h-32">
-            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-6xl lg:text-7xl shadow-lift border-4 border-cream-50">
-              {profile?.avatar_emoji ?? '📍'}
-            </div>
-            <div className="absolute bottom-1 right-1 bg-forest-500 text-white w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-[3px] border-cream-50 shadow-pin">
-              {profile?.neighbor_score ?? 50}
-            </div>
-          </div>
+          <AvatarUpload
+            avatarUrl={profile?.avatar_url ?? null}
+            avatarEmoji={profile?.avatar_emoji ?? '📍'}
+            score={profile?.neighbor_score ?? 50}
+          />
 
           <div className="mt-3">
             <div className="flex items-center gap-1.5">

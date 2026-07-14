@@ -31,8 +31,13 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
       {/* EN-TÊTE — façon Facebook */}
       <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
         <div className="relative flex-shrink-0">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin">
-            {post.author_avatar_emoji}
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin overflow-hidden">
+            {post.author_avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.author_avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              post.author_avatar_emoji
+            )}
           </div>
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-forest-500 rounded-full border-2 border-white" />
         </div>

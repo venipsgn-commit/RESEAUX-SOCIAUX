@@ -79,8 +79,13 @@ export default async function MapPage() {
                 {neighborCount} voisins · {posts.length} posts dans ton aura
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lilac-400 to-lilac-500 flex items-center justify-center text-2xl border-2 border-white shadow-pin flex-shrink-0">
-                  {nearest.author_avatar_emoji}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lilac-400 to-lilac-500 flex items-center justify-center text-2xl border-2 border-white shadow-pin flex-shrink-0 overflow-hidden">
+                  {nearest.author_avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={nearest.author_avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    nearest.author_avatar_emoji
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
