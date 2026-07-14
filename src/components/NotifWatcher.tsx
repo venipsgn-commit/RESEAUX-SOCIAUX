@@ -11,6 +11,7 @@ const TOAST_BY_TYPE: Record<string, { icon: string; text: string }> = {
   like: { icon: '❤️', text: 'Quelqu’un a aimé ton post' },
   comment: { icon: '🗨️', text: 'Nouveau commentaire' },
   follow: { icon: '👋', text: 'Nouvelle demande de connexion' },
+  story_like: { icon: '❤️', text: 'Quelqu’un a admiré ta story' },
 };
 
 /**

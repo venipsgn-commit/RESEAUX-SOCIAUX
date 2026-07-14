@@ -56,11 +56,11 @@ function groupStories(rows: StoryRow[]): Group[] {
   return order.map((id) => map.get(id)!);
 }
 
-function HeartIcon({ filled }: { filled: boolean }) {
+function HeartIcon({ filled, size = 30 }: { filled: boolean; size?: number }) {
   return (
     <svg
-      width="30"
-      height="30"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill={filled ? '#ff3b5c' : 'none'}
       stroke={filled ? '#ff3b5c' : 'currentColor'}
@@ -369,7 +369,10 @@ function StoryViewer({
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
   const [likes, setLikes] = useState<Record<string, { liked: boolean; count: number }>>({});
-  const [viewers, setViewers] = useState<{ handle: string; avatar_emoji: string }[] | null>(null);
+  const [viewers, setViewers] = useState<
+    { handle: string; avatar_emoji: string; liked: boolean }[] | null
+  >(null);
+  const [burst, setBurst] = useState(0);
 
   const group = groups[gi];
   const story = group?.stories[si];
@@ -432,6 +435,35 @@ function StoryViewer({
         swipedRef.current = false;
       }, 350);
     }
+  }
+
+  // Tap = naviguer ; double-tap = J'aime (avec gros cœur), façon Instagram.
+  const lastTapRef = useRef(0);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function likeBurst() {
+    setBurst((b) => b + 1);
+    if (story && !story.is_mine) {
+      const cur = likes[story.id] ?? { liked: story.viewer_liked, count: story.like_count };
+      if (!cur.liked) toggleLike();
+    }
+  }
+  function tapNav(dir: 'prev' | 'next') {
+    if (swipedRef.current) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+      navTimerRef.current = null;
+      lastTapRef.current = 0;
+      likeBurst();
+      return;
+    }
+    lastTapRef.current = now;
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => {
+      navTimerRef.current = null;
+      if (dir === 'prev') prev();
+      else next();
+    }, 230);
   }
 
   useEffect(() => setMounted(true), []);
@@ -509,9 +541,10 @@ function StoryViewer({
     setPaused(true);
     const { data } = await supabase.rpc('story_viewers', { p_story_id: story.id });
     setViewers(
-      ((data as { handle: string; avatar_emoji: string }[]) ?? []).map((v) => ({
+      ((data as { handle: string; avatar_emoji: string; liked: boolean }[]) ?? []).map((v) => ({
         handle: v.handle,
         avatar_emoji: v.avatar_emoji,
+        liked: v.liked,
       })),
     );
   }
@@ -538,13 +571,11 @@ function StoryViewer({
         draggable={false}
       />
 
-      {/* Zones de tap (précédent / suivant) + pause au maintien */}
+      {/* Zones de tap (précédent / suivant) + pause au maintien.
+          Double-tap = J'aime (façon Instagram). */}
       <button
         className="absolute left-0 top-16 bottom-24 w-1/3 z-10"
-        onClick={() => {
-          if (swipedRef.current) return;
-          prev();
-        }}
+        onClick={() => tapNav('prev')}
         onPointerDown={() => setPaused(true)}
         onPointerUp={() => setPaused(false)}
         onPointerLeave={() => setPaused(false)}
@@ -552,15 +583,24 @@ function StoryViewer({
       />
       <button
         className="absolute right-0 top-16 bottom-24 w-2/3 z-10"
-        onClick={() => {
-          if (swipedRef.current) return;
-          next();
-        }}
+        onClick={() => tapNav('next')}
         onPointerDown={() => setPaused(true)}
         onPointerUp={() => setPaused(false)}
         onPointerLeave={() => setPaused(false)}
         aria-label="Suivant"
       />
+
+      {/* Gros cœur au double-tap */}
+      {burst > 0 && (
+        <div
+          key={burst}
+          className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+        >
+          <div className="animate-heart-burst" style={{ filter: 'drop-shadow(0 6px 24px rgba(0,0,0,0.45))' }}>
+            <HeartIcon filled size={130} />
+          </div>
+        </div>
+      )}
 
       {/* En-tête : progression + auteur */}
       <div className="absolute top-0 inset-x-0 z-20 pt-3 px-3 pb-6 bg-gradient-to-b from-black/55 to-transparent pointer-events-none">
@@ -614,10 +654,18 @@ function StoryViewer({
           {story.is_mine ? (
             <button
               onClick={openViewers}
-              className="pointer-events-auto flex items-center gap-1.5 text-white/95 bg-white/10 backdrop-blur px-3 py-2 rounded-full text-sm font-semibold"
+              className="pointer-events-auto flex items-center gap-2.5 text-white/95 bg-white/10 backdrop-blur px-3.5 py-2 rounded-full text-sm font-semibold"
             >
-              <EyeIcon />
-              {story.view_count} {story.view_count === 1 ? 'vue' : 'vues'}
+              <span className="flex items-center gap-1.5">
+                <EyeIcon />
+                {story.view_count}
+              </span>
+              {story.like_count > 0 && (
+                <span className="flex items-center gap-1 text-[#ff8fa3]">
+                  <HeartIcon filled size={16} />
+                  {story.like_count}
+                </span>
+              )}
             </button>
           ) : (
             <span />
@@ -647,6 +695,12 @@ function StoryViewer({
               <div className="w-10 h-1 rounded-full bg-ink-900/15 mb-3" />
               <div className="font-black text-ink-900">
                 {viewers.length} {viewers.length === 1 ? 'personne a vu' : 'personnes ont vu'}
+                {viewers.some((v) => v.liked) && (
+                  <span className="text-coral-500">
+                    {' · '}
+                    {viewers.filter((v) => v.liked).length} ❤️
+                  </span>
+                )}
               </div>
             </div>
             <div className="overflow-y-auto px-4 pb-8">
@@ -660,7 +714,12 @@ function StoryViewer({
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg">
                       {v.avatar_emoji}
                     </div>
-                    <span className="font-bold text-sm text-ink-900">{v.handle}</span>
+                    <span className="font-bold text-sm text-ink-900 flex-1">{v.handle}</span>
+                    {v.liked && (
+                      <span className="text-[#ff3b5c]" title="A admiré ta story">
+                        <HeartIcon filled size={18} />
+                      </span>
+                    )}
                   </div>
                 ))
               )}

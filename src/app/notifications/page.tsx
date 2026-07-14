@@ -12,6 +12,7 @@ const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   comment: { icon: '🗨️', verb: 'a commenté ton post' },
   call: { icon: '📞', verb: "a essayé de t'appeler" },
   follow: { icon: '👋', verb: 'veut faire connaissance' },
+  story_like: { icon: '❤️', verb: 'a admiré ta story' },
 };
 
 export default async function NotificationsPage() {

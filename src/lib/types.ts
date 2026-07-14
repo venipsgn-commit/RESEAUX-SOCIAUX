@@ -89,7 +89,7 @@ export type Message = {
   attachment_type?: AttachmentType | null;
 };
 
-export type NotifType = 'message' | 'like' | 'comment' | 'call' | 'follow';
+export type NotifType = 'message' | 'like' | 'comment' | 'call' | 'follow' | 'story_like';
 
 export type NotifItem = {
   id: string;
