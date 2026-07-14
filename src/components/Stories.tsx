@@ -22,6 +22,7 @@ type StoryRow = {
   like_count: number;
   viewer_liked: boolean;
   view_count: number;
+  comment_count: number;
 };
 
 type Group = {
@@ -441,6 +442,11 @@ function StoryViewer({
   const [reactBurst, setReactBurst] = useState<{ id: number; emoji: string } | null>(null);
   const [muted, setMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replySending, setReplySending] = useState(false);
+  const [comments, setComments] = useState<
+    { handle: string; avatar_emoji: string; body: string }[] | null
+  >(null);
 
   const group = groups[gi];
   const story = group?.stories[si];
@@ -562,27 +568,27 @@ function StoryViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story?.id]);
 
-  // Avance automatique (5 s) pour les PHOTOS — en pause si on maintient / vues ouvertes
+  // Avance automatique (5 s) pour les PHOTOS — en pause si on maintient / feuille ouverte
   useEffect(() => {
-    if (!story || isVid || paused || viewers) return;
+    if (!story || isVid || paused || viewers || comments) return;
     const DURATION = 5000;
     const STEP = 40;
     const t = setInterval(() => {
       setProgress((p) => Math.min(100, p + (STEP / DURATION) * 100));
     }, STEP);
     return () => clearInterval(t);
-  }, [story?.id, isVid, paused, viewers]);
+  }, [story?.id, isVid, paused, viewers, comments]);
 
   useEffect(() => {
     if (progress >= 100) nextRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
-  // VIDÉO : lecture/pause selon l'état (maintien, liste des vues)
+  // VIDÉO : lecture/pause selon l'état (maintien, feuilles ouvertes)
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !isVid) return;
-    if (paused || viewers) {
+    if (paused || viewers || comments) {
       v.pause();
     } else {
       v.play().catch(() => {
@@ -593,7 +599,7 @@ function StoryViewer({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused, viewers, story?.id, isVid]);
+  }, [paused, viewers, comments, story?.id, isVid]);
 
   async function deleteStory() {
     if (!story) return;
@@ -652,6 +658,47 @@ function StoryViewer({
   }
   function closeViewers() {
     setViewers(null);
+    setPaused(false);
+  }
+
+  async function sendComment() {
+    if (!story || story.is_mine || replySending) return;
+    const text = replyText.trim();
+    if (!text) return;
+    setReplySending(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setReplySending(false);
+      return;
+    }
+    const { error } = await supabase
+      .from('story_comments')
+      .insert({ story_id: story.id, user_id: user.id, body: text });
+    setReplySending(false);
+    if (!error) {
+      setReplyText('');
+      toast({ icon: '💬', title: 'Réponse envoyée', text: `à ${group.handle}` });
+    } else {
+      toast({ icon: '⚠️', title: 'Oups', text: "La réponse n'est pas partie." });
+    }
+  }
+
+  async function openComments() {
+    if (!story) return;
+    setPaused(true);
+    const { data } = await supabase.rpc('story_comments_list', { p_story_id: story.id });
+    setComments(
+      ((data as { handle: string; avatar_emoji: string; body: string }[]) ?? []).map((c) => ({
+        handle: c.handle,
+        avatar_emoji: c.avatar_emoji,
+        body: c.body,
+      })),
+    );
+  }
+  function closeComments() {
+    setComments(null);
     setPaused(false);
   }
 
@@ -807,8 +854,9 @@ function StoryViewer({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          {story.is_mine ? (
+        {story.is_mine ? (
+          // Mes stories : vues + réponses
+          <div className="flex items-center gap-2">
             <button
               onClick={openViewers}
               className="pointer-events-auto flex items-center gap-2.5 text-white/95 bg-white/10 backdrop-blur px-3.5 py-2 rounded-full text-sm font-semibold"
@@ -824,20 +872,52 @@ function StoryViewer({
                 </span>
               )}
             </button>
-          ) : (
-            <span />
-          )}
-          {!story.is_mine && (
-            <button
-              onClick={toggleLike}
-              aria-label="J'aime"
-              className="pointer-events-auto flex items-center gap-1.5 text-white active:scale-110 transition"
-            >
-              <HeartIcon filled={likeInfo.liked} />
-              {likeInfo.count > 0 && <span className="text-sm font-bold">{likeInfo.count}</span>}
-            </button>
-          )}
-        </div>
+            {story.comment_count > 0 && (
+              <button
+                onClick={openComments}
+                className="pointer-events-auto flex items-center gap-1.5 text-white/95 bg-white/10 backdrop-blur px-3.5 py-2 rounded-full text-sm font-semibold"
+              >
+                💬 {story.comment_count}
+              </button>
+            )}
+          </div>
+        ) : (
+          // Stories des voisins : répondre + J'aime
+          <div className="flex items-center gap-2">
+            <input
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onFocus={() => setPaused(true)}
+              onBlur={() => setPaused(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') sendComment();
+              }}
+              maxLength={200}
+              placeholder={`Répondre à ${group.handle}…`}
+              className="pointer-events-auto flex-1 min-w-0 bg-white/15 backdrop-blur text-white placeholder-white/60 rounded-full px-4 py-2.5 text-sm outline-none border border-white/25"
+            />
+            {replyText.trim() ? (
+              <button
+                onClick={sendComment}
+                disabled={replySending}
+                aria-label="Envoyer"
+                className="pointer-events-auto text-white p-1.5 disabled:opacity-50"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={toggleLike}
+                aria-label="J'aime"
+                className="pointer-events-auto flex items-center gap-1 text-white active:scale-110 transition"
+              >
+                <HeartIcon filled={likeInfo.liked} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Feuille « Vu par » (mes stories) */}
@@ -878,6 +958,43 @@ function StoryViewer({
                         <HeartIcon filled size={18} />
                       </span>
                     )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feuille « Réponses » (mes stories) */}
+      {comments && (
+        <div className="absolute inset-0 z-40 flex flex-col justify-end" onClick={closeComments}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative bg-cream-50 rounded-t-3xl max-h-[70%] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="pt-3 pb-2 flex flex-col items-center">
+              <div className="w-10 h-1 rounded-full bg-ink-900/15 mb-3" />
+              <div className="font-black text-ink-900">
+                💬 {comments.length} {comments.length === 1 ? 'réponse' : 'réponses'}
+              </div>
+            </div>
+            <div className="overflow-y-auto px-4 pb-8">
+              {comments.length === 0 ? (
+                <p className="text-center text-sm text-ink-700/60 py-8">
+                  Aucune réponse pour l&apos;instant.
+                </p>
+              ) : (
+                comments.map((c, i) => (
+                  <div key={i} className="flex items-start gap-3 py-2.5">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg flex-shrink-0">
+                      {c.avatar_emoji}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-ink-900">{c.handle}</div>
+                      <div className="text-sm text-ink-700/85 break-words">{c.body}</div>
+                    </div>
                   </div>
                 ))
               )}

@@ -13,6 +13,7 @@ const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   call: { icon: '📞', verb: "a essayé de t'appeler" },
   follow: { icon: '👋', verb: 'veut faire connaissance' },
   story_like: { icon: '❤️', verb: 'a admiré ta story' },
+  story_comment: { icon: '💬', verb: 'a répondu à ta story' },
 };
 
 export default async function NotificationsPage() {
@@ -109,7 +110,9 @@ export default async function NotificationsPage() {
                         n.type !== 'follow' &&
                         n.body && (
                           <div className="text-xs text-ink-700/55 truncate mt-0.5">
-                            {n.type === 'message' || n.type === 'comment' ? `« ${n.body} »` : n.body}
+                            {n.type === 'message' || n.type === 'comment' || n.type === 'story_comment'
+                              ? `« ${n.body} »`
+                              : n.body}
                           </div>
                         )
                       )}
