@@ -147,6 +147,8 @@ export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; 
   const [pending, setPending] = useState<{ file: File; url: string; isVideo: boolean } | null>(null);
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
+  // Story en cours d'envoi en arrière-plan (cercle de progression sur « Toi »).
+  const [uploadingStory, setUploadingStory] = useState<{ previewUrl: string; isVideo: boolean } | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase.rpc('stories_feed', {
@@ -198,9 +200,19 @@ export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; 
       router.push('/connexion');
       return;
     }
+    const file = pending.file;
+    const cap = caption.trim();
+    const previewUrl = pending.url;
+    const isVideo = pending.isVideo;
+
+    // On ferme l'aperçu TOUT DE SUITE : l'envoi continue en arrière-plan et un
+    // cercle de progression tourne sur le rond « Toi » du Voisinage.
+    setPending(null);
+    setCaption('');
     setUploading(true);
+    setUploadingStory({ previewUrl, isVideo });
+
     try {
-      const file = pending.file;
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       // Le 1er dossier doit être l'id de l'utilisateur (règle du bucket).
       const path = `${user.id}/story-${Date.now()}.${ext}`;
@@ -213,17 +225,18 @@ export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; 
       const { error } = await supabase.from('stories').insert({
         user_id: user.id,
         image_url: data.publicUrl,
-        caption: caption.trim() || null,
+        caption: cap || null,
         lat: p.lat,
         lng: p.lng,
       });
       if (error) throw error;
       toast({ icon: '✨', title: 'Story publiée !', text: 'Visible 24h par tes voisins.' });
-      closeComposer();
       await load();
     } catch {
       toast({ icon: '⚠️', title: 'Oups', text: "La story n'a pas pu être publiée." });
     } finally {
+      setUploadingStory(null);
+      URL.revokeObjectURL(previewUrl);
       setUploading(false);
     }
   }
@@ -247,29 +260,54 @@ export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; 
 
       <div className="overflow-x-auto -mx-1 [&::-webkit-scrollbar]:hidden">
         <div className="flex gap-3 px-1 pb-1">
-          {/* Toi — ajouter / voir mes stories */}
+          {/* Toi — ajouter / voir mes stories / envoi en cours */}
           <div className="text-center flex-shrink-0 w-16">
             <div className="relative w-16 h-16">
-              <button
-                onClick={() => (mine ? setOpen(groups.indexOf(mine)) : fileRef.current?.click())}
-                className="w-16 h-16 flex items-center justify-center"
-                aria-label={mine ? 'Voir ma story' : 'Ajouter une story'}
-              >
-                {mine ? (
+              {uploadingStory ? (
+                // Envoi en arrière-plan : aperçu + cercle de progression
+                <div className="w-16 h-16 flex items-center justify-center">
                   <div className="story-ring">
-                    <div className="story-ring-inner overflow-hidden">
-                      <StoryThumb story={mine.stories[mine.stories.length - 1]} />
+                    <div className="story-ring-inner overflow-hidden relative">
+                      {uploadingStory.isVideo ? (
+                        <video
+                          src={`${uploadingStory.previewUrl}#t=0.1`}
+                          className="w-full h-full object-cover opacity-60"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={uploadingStory.previewUrl} alt="" className="w-full h-full object-cover opacity-60" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-full border-[3px] border-white/50 border-t-white animate-spin" />
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="story-ring story-ring--add">
-                    <div className="story-ring-inner text-ink-700/40" style={{ fontSize: 26, fontWeight: 300 }}>
-                      ＋
+                </div>
+              ) : (
+                <button
+                  onClick={() => (mine ? setOpen(groups.indexOf(mine)) : fileRef.current?.click())}
+                  className="w-16 h-16 flex items-center justify-center"
+                  aria-label={mine ? 'Voir ma story' : 'Ajouter une story'}
+                >
+                  {mine ? (
+                    <div className="story-ring">
+                      <div className="story-ring-inner overflow-hidden">
+                        <StoryThumb story={mine.stories[mine.stories.length - 1]} />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </button>
-              {mine && (
+                  ) : (
+                    <div className="story-ring story-ring--add">
+                      <div className="story-ring-inner text-ink-700/40" style={{ fontSize: 26, fontWeight: 300 }}>
+                        ＋
+                      </div>
+                    </div>
+                  )}
+                </button>
+              )}
+              {mine && !uploadingStory && (
                 <button
                   onClick={() => fileRef.current?.click()}
                   aria-label="Ajouter une story"
@@ -279,7 +317,9 @@ export function Stories({ lat, lng, radius = 500 }: { lat: number; lng: number; 
                 </button>
               )}
             </div>
-            <div className="text-[10px] mt-1 font-bold text-ink-700/70">Toi</div>
+            <div className="text-[10px] mt-1 font-bold text-ink-700/70">
+              {uploadingStory ? 'Envoi…' : 'Toi'}
+            </div>
           </div>
 
           {/* Stories des voisins */}
