@@ -117,6 +117,18 @@ export default async function ProfilPage() {
                 <span className="w-5 text-center">🗓️</span>
                 <span>Membre depuis {memberSince}</span>
               </div>
+              {profile?.is_private && (
+                <div className="flex items-center gap-2.5 text-forest-600 font-semibold">
+                  <span className="w-5 text-center">🔒</span>
+                  <span>Profil privé · invisible sur la carte</span>
+                </div>
+              )}
+              {profile?.is_pro && (
+                <div className="flex items-center gap-2.5 text-sunset-500 font-semibold">
+                  <span className="w-5 text-center">🚀</span>
+                  <span>Compte Pro · aura jusqu&apos;à 10 km</span>
+                </div>
+              )}
             </div>
           </div>
 

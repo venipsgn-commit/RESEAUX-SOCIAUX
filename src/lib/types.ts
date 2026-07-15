@@ -65,6 +65,7 @@ export type Profile = {
   aura_radius_m: number;
   neighbor_score: number;
   is_pro: boolean;
+  is_private: boolean;
   created_at: string;
 };
 

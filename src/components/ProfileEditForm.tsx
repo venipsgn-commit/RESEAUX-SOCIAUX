@@ -15,6 +15,7 @@ type EditProfile = {
   tagline: string | null;
   aura_radius_m: number;
   is_pro: boolean;
+  is_private: boolean;
 };
 
 function fmtRadius(m: number) {
@@ -30,9 +31,10 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
   const [tagline, setTagline] = useState(profile.tagline ?? '');
   const [radius, setRadius] = useState(profile.aura_radius_m ?? 500);
   const [isPro, setIsPro] = useState(profile.is_pro ?? false);
+  const [isPrivate, setIsPrivate] = useState(profile.is_private ?? false);
   const [saving, setSaving] = useState(false);
 
-  const maxRadius = isPro ? 2000 : 1000;
+  const maxRadius = isPro ? 10000 : 1000;
 
   async function goPro() {
     setIsPro(true);
@@ -51,6 +53,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         bio: bio.trim() || null,
         tagline: tagline.trim() || null,
         aura_radius_m: Math.min(radius, maxRadius),
+        is_private: isPrivate,
       })
       .eq('id', profile.id);
     setSaving(false);
@@ -141,14 +144,14 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         />
         <div className="flex justify-between text-[10px] font-bold text-ink-700/50 mt-1">
           <span>100 m</span>
-          <span>{isPro ? '2 km (Pro)' : '1 km'}</span>
+          <span>{isPro ? '10 km (Pro)' : '1 km'}</span>
         </div>
 
         {!isPro ? (
           <div className="mt-3 bg-gradient-to-br from-sunset-300/40 to-sunset-500/15 rounded-2xl p-3.5 border border-sunset-500/20">
             <div className="font-extrabold text-sm">🚀 AURA Pro</div>
             <div className="text-xs text-ink-700/70 mt-0.5">
-              Étends ton aura <b>jusqu&apos;à 2 km</b> et touche encore plus de voisins.
+              Étends ton aura <b>jusqu&apos;à 10 km</b> et touche encore plus de voisins.
             </div>
             <button
               onClick={goPro}
@@ -159,9 +162,36 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
           </div>
         ) : (
           <div className="mt-2.5 text-xs font-bold text-forest-600">
-            ✓ Compte Pro — aura jusqu&apos;à 2 km débloquée
+            ✓ Compte Pro — aura jusqu&apos;à 10 km débloquée 🚀
           </div>
         )}
+      </div>
+
+      {/* Confidentialité */}
+      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+        <button
+          onClick={() => setIsPrivate((v) => !v)}
+          className="w-full flex items-center justify-between gap-3"
+        >
+          <div className="text-left">
+            <div className="text-sm font-extrabold flex items-center gap-1.5">🔒 Profil privé</div>
+            <div className="text-[11px] text-ink-700/60 mt-0.5">
+              Tu restes <b>invisible</b> sur la carte et dans la liste des voisins. Tu peux quand
+              même publier et discuter.
+            </div>
+          </div>
+          <span
+            className={`flex-shrink-0 w-11 h-6 rounded-full relative transition ${
+              isPrivate ? 'bg-forest-500' : 'bg-ink-900/15'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-all ${
+                isPrivate ? 'right-0.5' : 'left-0.5'
+              }`}
+            />
+          </span>
+        </button>
       </div>
 
       {/* Enregistrer */}
