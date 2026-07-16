@@ -111,20 +111,13 @@ function StoryThumb({ story, dim = false }: { story: StoryRow; dim?: boolean }) 
   const cls = `w-full h-full object-cover ${dim ? 'story-thumb--seen' : ''}`;
   if (isVideoUrl(story.image_url)) {
     return (
-      <div className={`w-full h-full relative ${dim ? 'story-thumb--seen' : ''}`}>
-        <video
-          src={`${story.image_url}#t=0.1`}
-          className="w-full h-full object-cover"
-          muted
-          playsInline
-          preload="metadata"
-        />
-        <span className="absolute inset-0 flex items-center justify-center">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}>
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </span>
-      </div>
+      <video
+        src={`${story.image_url}#t=0.1`}
+        className={`w-full h-full object-cover ${dim ? 'story-thumb--seen' : ''}`}
+        muted
+        playsInline
+        preload="metadata"
+      />
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
