@@ -177,6 +177,21 @@ export default async function ProfilPage() {
         </div>
 
         <div className="px-4 lg:px-8 mt-5 space-y-4">
+          {/* Mes commandes */}
+          <Link
+            href="/commandes"
+            className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-soft border border-ink-900/5"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🧾</span>
+              <div>
+                <div className="font-extrabold text-sm">Mes commandes</div>
+                <div className="text-[11px] text-ink-700/55">Tes achats et tes ventes</div>
+              </div>
+            </div>
+            <span className="text-ink-700/40 text-lg">→</span>
+          </Link>
+
           {/* Invitations reçues (Accepter / Refuser) */}
           <InvitationList />
 

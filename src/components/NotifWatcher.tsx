@@ -13,6 +13,7 @@ const TOAST_BY_TYPE: Record<string, { icon: string; text: string }> = {
   follow: { icon: '👋', text: 'Nouvelle demande de connexion' },
   story_like: { icon: '❤️', text: 'Quelqu’un a admiré ta story' },
   story_comment: { icon: '💬', text: 'Quelqu’un a répondu à ta story' },
+  order: { icon: '🛒', text: 'Mise à jour de commande' },
 };
 
 /**

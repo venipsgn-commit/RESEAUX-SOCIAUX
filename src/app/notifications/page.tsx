@@ -14,6 +14,7 @@ const TYPE_META: Record<NotifItem['type'], { icon: string; verb: string }> = {
   follow: { icon: '👋', verb: 'veut faire connaissance' },
   story_like: { icon: '❤️', verb: 'a admiré ta story' },
   story_comment: { icon: '💬', verb: 'a répondu à ta story' },
+  order: { icon: '🛒', verb: 'à propos de ta commande' },
 };
 
 export default async function NotificationsPage() {
@@ -74,11 +75,13 @@ export default async function NotificationsPage() {
                 const href =
                   n.type === 'follow'
                     ? '/profil'
-                    : (n.type === 'message' || n.type === 'call') && n.conversation_id
-                      ? `/messages/${n.conversation_id}`
-                      : n.post_id
-                        ? `/post/${n.post_id}`
-                        : '#';
+                    : n.type === 'order'
+                      ? '/commandes'
+                      : (n.type === 'message' || n.type === 'call') && n.conversation_id
+                        ? `/messages/${n.conversation_id}`
+                        : n.post_id
+                          ? `/post/${n.post_id}`
+                          : '#';
                 const verb =
                   n.type === 'follow'
                     ? n.body === 'accepted'

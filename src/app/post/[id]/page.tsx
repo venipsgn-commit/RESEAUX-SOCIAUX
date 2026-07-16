@@ -4,6 +4,7 @@ import { Shell } from '@/components/Shell';
 import { ReactionBar } from '@/components/ReactionBar';
 import { DeletePostButton } from '@/components/DeletePostButton';
 import { ContactButton } from '@/components/ContactButton';
+import { BuyButton } from '@/components/BuyButton';
 import { Comments } from '@/components/Comments';
 import { createClient } from '@/lib/supabase/server';
 import { type PostDetail, POST_TYPE_META, formatPrice, timeAgo } from '@/lib/types';
@@ -115,14 +116,21 @@ export default async function PostPage({ params }: { params: { id: string } }) {
           ) : (
             <div className="space-y-2">
               {post.type === 'sell' && (
-                <button className="w-full py-3 bg-gradient-to-br from-forest-400 to-forest-600 text-white rounded-full font-extrabold text-sm shadow-soft">
-                  Acheter en escrow · {price}
-                </button>
+                <BuyButton
+                  postId={post.id}
+                  priceCents={post.price_cents}
+                  sellerHandle={post.author_handle}
+                  label="Acheter"
+                />
               )}
               {post.type === 'service' && (
-                <button className="w-full py-3 bg-coral-500 text-white rounded-full font-extrabold text-sm shadow-soft">
-                  📅 Réserver · {price}
-                </button>
+                <BuyButton
+                  postId={post.id}
+                  priceCents={post.price_cents}
+                  sellerHandle={post.author_handle}
+                  label="Réserver"
+                  accent="from-coral-400 to-coral-500"
+                />
               )}
               {post.type === 'event' && (
                 <button className="w-full py-3 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft">
