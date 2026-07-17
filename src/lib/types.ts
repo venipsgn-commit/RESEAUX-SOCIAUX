@@ -91,6 +91,7 @@ export type Message = {
   sender_id: string;
   body: string | null;
   created_at: string;
+  deleted?: boolean;
   attachment_url?: string | null;
   attachment_type?: AttachmentType | null;
 };

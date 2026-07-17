@@ -60,6 +60,7 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
   // Réactions aux messages : { [messageId]: { [userId]: emoji } }
   const [reactions, setReactions] = useState<Record<string, Record<string, string>>>({});
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const QUICK_REACT = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -141,6 +142,10 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
           return { ...prev, [payload.messageId]: m };
         });
       })
+      .on('broadcast', { event: 'deleted' }, ({ payload }) => {
+        if (!payload?.messageId) return;
+        setDeletedIds((prev) => new Set(prev).add(payload.messageId));
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') markRead();
       });
@@ -174,6 +179,13 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
+
+  async function deleteMsg(messageId: string) {
+    setPickerFor(null);
+    setDeletedIds((prev) => new Set(prev).add(messageId));
+    channelRef.current?.send({ type: 'broadcast', event: 'deleted', payload: { messageId } });
+    await supabase.rpc('delete_message', { p_id: messageId });
+  }
 
   async function react(messageId: string, emoji: string) {
     setPickerFor(null);
@@ -376,6 +388,16 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
             );
           }
 
+          if (m.deleted || deletedIds.has(m.id)) {
+            return (
+              <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                <div className="max-w-[80%] text-sm px-4 py-2.5 rounded-3xl bg-surface border border-ink-900/5 text-ink-700/40 italic">
+                  🚫 Message supprimé
+                </div>
+              </div>
+            );
+          }
+
           const hasMedia = !!m.attachment_url;
           return (
             <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
@@ -481,6 +503,15 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                       {e}
                     </button>
                   ))}
+                  {mine && (
+                    <button
+                      onClick={() => deleteMsg(m.id)}
+                      aria-label="Supprimer le message"
+                      className="text-lg pl-1.5 ml-0.5 border-l border-ink-900/10 text-coral-500 active:scale-110 transition"
+                    >
+                      🗑
+                    </button>
+                  )}
                 </div>
               )}
             </div>
