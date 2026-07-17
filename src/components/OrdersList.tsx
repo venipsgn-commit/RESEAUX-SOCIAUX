@@ -71,7 +71,7 @@ export function OrdersList() {
   const card = (o: Order) => {
     const st = STATUS_META[o.status];
     return (
-      <div key={o.id} className="bg-white rounded-2xl p-3.5 shadow-soft border border-ink-900/5">
+      <div key={o.id} className="bg-surface rounded-2xl p-3.5 shadow-soft border border-ink-900/5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-sand-100 flex items-center justify-center text-2xl overflow-hidden flex-shrink-0">
             {o.post_image_url ? (

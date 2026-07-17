@@ -57,13 +57,13 @@ export default function ResetPasswordPage() {
         </div>
 
         {done ? (
-          <div className="bg-white rounded-3xl p-6 shadow-soft text-center">
+          <div className="bg-surface rounded-3xl p-6 shadow-soft text-center">
             <div className="text-5xl mb-2">✅</div>
             <div className="font-black">Mot de passe modifié !</div>
             <div className="text-sm text-ink-700/60 mt-1">Redirection…</div>
           </div>
         ) : !ready ? (
-          <div className="bg-white rounded-3xl p-6 shadow-soft text-center">
+          <div className="bg-surface rounded-3xl p-6 shadow-soft text-center">
             <div className="text-4xl mb-2">📧</div>
             <div className="font-bold text-sm">Ouvre le lien reçu par e-mail</div>
             <p className="text-xs text-ink-700/55 mt-1">
@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+            <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
               <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                 Nouveau mot de passe
               </label>
@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
                 className="w-full text-sm font-semibold outline-none bg-transparent mt-0.5"
               />
             </div>
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+            <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
               <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                 Confirme le mot de passe
               </label>

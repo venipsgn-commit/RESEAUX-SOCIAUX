@@ -34,7 +34,7 @@ export function AuraToggle({ initialActive, radius }: { initialActive: boolean; 
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+    <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm font-extrabold">📡 Mon AURA</div>
@@ -56,7 +56,7 @@ export function AuraToggle({ initialActive, radius }: { initialActive: boolean; 
           }`}
         >
           <span
-            className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-soft transition-all ${
+            className={`absolute top-0.5 w-6 h-6 bg-surface rounded-full shadow-soft transition-all ${
               active ? 'right-0.5' : 'left-0.5'
             }`}
           />

@@ -39,7 +39,7 @@ export function SearchBox() {
         value={q}
         onChange={(e) => run(e.target.value)}
         placeholder="🔍 Rechercher un voisin, une annonce…"
-        className="w-full bg-white rounded-full px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+        className="w-full bg-surface rounded-full px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
       />
 
       {results === null ? (

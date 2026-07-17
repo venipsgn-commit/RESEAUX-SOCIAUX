@@ -108,7 +108,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
 
           {/* Actions */}
           {isOwner ? (
-            <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5 space-y-2">
+            <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5 space-y-2">
               <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">
                 C&apos;est ton post
               </div>

@@ -5,9 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: { 700: '#2d2519', 800: '#1f1a12', 900: '#15110a' },
-        cream: { 50: '#fdfaf5', 100: '#faf3e7', 200: '#f4e6cd' },
-        sand: { 100: '#f5efe3', 200: '#ebe1ce', 300: '#d8c9a8' },
+        ink: {
+          700: 'rgb(var(--ink-700) / <alpha-value>)',
+          800: 'rgb(var(--ink-800) / <alpha-value>)',
+          900: 'rgb(var(--ink-900) / <alpha-value>)',
+        },
+        cream: {
+          50: 'rgb(var(--cream-50) / <alpha-value>)',
+          100: 'rgb(var(--cream-100) / <alpha-value>)',
+          200: 'rgb(var(--cream-200) / <alpha-value>)',
+        },
+        sand: {
+          100: 'rgb(var(--sand-100) / <alpha-value>)',
+          200: 'rgb(var(--sand-200) / <alpha-value>)',
+          300: 'rgb(var(--sand-300) / <alpha-value>)',
+        },
+        surface: 'rgb(var(--surface) / <alpha-value>)',
         forest: { 400: '#4a8161', 500: '#2d5a3d', 600: '#1e4530' },
         sage: { 200: '#cde0d2', 300: '#a8c9b0', 400: '#7eac8a' },
         coral: { 400: '#ff8b7d', 500: '#ff6b6b' },

@@ -47,7 +47,7 @@ export function InvitationList({ title = 'Invitations reçues' }: { title?: stri
   if (!loaded || reqs.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-soft border border-forest-500/20 mx-2 lg:mx-0 my-2">
+    <div className="bg-surface rounded-2xl p-4 shadow-soft border border-forest-500/20 mx-2 lg:mx-0 my-2">
       <div className="text-[11px] uppercase tracking-wider font-bold text-forest-600 mb-2.5">
         👋 {title} ({reqs.length})
       </div>

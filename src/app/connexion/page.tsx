@@ -105,7 +105,7 @@ export default function ConnexionPage() {
           <div className="flex flex-col items-center mb-8">
             <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center mb-3 shadow-lift">
               <div className="absolute inset-0 rounded-full bg-forest-400 animate-ping-slow opacity-30" />
-              <div className="relative w-4 h-4 rounded-full bg-white" />
+              <div className="relative w-4 h-4 rounded-full bg-surface" />
             </div>
             <div className="text-4xl font-black tracking-tight">AURA</div>
             <p className="hand text-xl text-coral-500 mt-1">Ton quartier, enfin vivant.</p>
@@ -133,7 +133,7 @@ export default function ConnexionPage() {
           <form onSubmit={submit} className="space-y-3">
             {mode === 'signup' && (
               <>
-                <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+                <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
                   <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                     Pseudo (@)
                   </label>
@@ -145,7 +145,7 @@ export default function ConnexionPage() {
                     className="w-full text-sm font-semibold outline-none bg-transparent mt-0.5"
                   />
                 </div>
-                <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+                <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
                   <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                     Nom affiché
                   </label>
@@ -158,7 +158,7 @@ export default function ConnexionPage() {
                 </div>
               </>
             )}
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+            <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
               <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                 Email
               </label>
@@ -171,7 +171,7 @@ export default function ConnexionPage() {
                 className="w-full text-sm font-semibold outline-none bg-transparent mt-0.5"
               />
             </div>
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
+            <div className="bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5">
               <label className="text-[10px] uppercase tracking-wider font-bold text-ink-700/50">
                 Mot de passe {mode === 'signup' && '(8+ caractères)'}
               </label>

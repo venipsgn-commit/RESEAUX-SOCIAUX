@@ -5,6 +5,37 @@
 :root {
   --paper: #fdfaf5;
   --ink: #1f1a12;
+
+  /* Palette thème-aware (canaux RGB pour supporter l'opacité Tailwind) */
+  --ink-700: 45 37 25;
+  --ink-800: 31 26 18;
+  --ink-900: 21 17 10;
+  --cream-50: 253 250 245;
+  --cream-100: 250 243 231;
+  --cream-200: 244 230 205;
+  --sand-100: 245 239 227;
+  --sand-200: 235 225 206;
+  --sand-300: 216 201 168;
+  --surface: 255 255 255;
+}
+
+:root[data-theme='dark'] {
+  /* Textes clairs, fonds sombres */
+  --ink-700: 176 168 152;
+  --ink-800: 214 208 195;
+  --ink-900: 242 237 226;
+  --cream-50: 18 16 14;
+  --cream-100: 26 23 19;
+  --cream-200: 34 30 24;
+  --sand-100: 38 33 27;
+  --sand-200: 50 43 35;
+  --sand-300: 74 64 51;
+  --surface: 34 29 23;
+}
+
+body {
+  color: rgb(var(--ink-900));
+  background-color: rgb(var(--cream-50));
 }
 
 /* Anneau vert pulsant des voisins en ligne (avatars carte, façon Snap Map) */

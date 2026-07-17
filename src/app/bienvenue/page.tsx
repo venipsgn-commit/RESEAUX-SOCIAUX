@@ -95,7 +95,7 @@ export default function BienvenuePage() {
         </div>
 
         {/* Étape 1 — position */}
-        <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+        <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
           <div className="font-extrabold text-sm">📍 Active ta position</div>
           <p className="text-[12px] text-ink-700/60 mt-0.5">
             AURA te montre les voisins et annonces <b>autour de toi</b>. Ta position reste privée.
@@ -116,7 +116,7 @@ export default function BienvenuePage() {
         </div>
 
         {/* Étape 2 — avatar + nom */}
-        <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5 mt-3">
+        <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5 mt-3">
           <div className="font-extrabold text-sm">😊 Ton profil</div>
           <input
             value={name}

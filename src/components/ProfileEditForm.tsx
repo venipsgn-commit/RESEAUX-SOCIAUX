@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from '@/lib/toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 type Blocked = { user_id: string; handle: string; display_name: string | null; avatar_emoji: string };
 
@@ -127,6 +128,9 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
 
   return (
     <div className="space-y-5">
+      {/* Thème clair / sombre */}
+      <ThemeToggle />
+
       {/* Avatar emoji */}
       <div>
         <label className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">
@@ -138,7 +142,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
               key={e}
               onClick={() => setEmoji(e)}
               className={`aspect-square rounded-xl text-xl flex items-center justify-center transition ${
-                emoji === e ? 'bg-forest-500/15 ring-2 ring-forest-500' : 'bg-white border border-ink-900/5'
+                emoji === e ? 'bg-forest-500/15 ring-2 ring-forest-500' : 'bg-surface border border-ink-900/5'
               }`}
             >
               {e}
@@ -155,7 +159,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={40}
           placeholder="Ton nom"
-          className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+          className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
         />
       </div>
 
@@ -168,7 +172,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
           maxLength={200}
           rows={3}
           placeholder="Parle un peu de toi…"
-          className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft resize-none"
+          className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft resize-none"
         />
       </div>
 
@@ -182,12 +186,12 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
           onChange={(e) => setTagline(e.target.value)}
           maxLength={60}
           placeholder="Ta devise, ton humeur…"
-          className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+          className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
         />
       </div>
 
       {/* Rayon de l'aura */}
-      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <div className="flex items-center justify-between">
           <label className="text-sm font-extrabold">📡 Rayon de mon aura</label>
           <span className="text-forest-600 font-black">{fmtRadius(radius)}</span>
@@ -227,7 +231,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
       </div>
 
       {/* Rayon de visibilité (qui peut me voir) */}
-      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <div className="flex items-center justify-between">
           <label className="text-sm font-extrabold">👁️ Qui peut me voir</label>
           <span className="text-forest-600 font-black">{fmtRadius(visRadius)}</span>
@@ -251,7 +255,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
       </div>
 
       {/* Confidentialité */}
-      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <button
           onClick={() => setIsPrivate((v) => !v)}
           className="w-full flex items-center justify-between gap-3"
@@ -269,7 +273,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
             }`}
           >
             <span
-              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-all ${
+              className={`absolute top-0.5 w-5 h-5 bg-surface rounded-full shadow-soft transition-all ${
                 isPrivate ? 'right-0.5' : 'left-0.5'
               }`}
             />
@@ -287,7 +291,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
       </button>
 
       {/* Changer de mot de passe */}
-      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <div className="text-sm font-extrabold mb-2">🔐 Changer de mot de passe</div>
         <input
           type="password"
@@ -314,7 +318,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
 
       {/* Comptes bloqués */}
       {blocked.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+        <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
           <div className="text-sm font-extrabold mb-2">🚫 Comptes bloqués</div>
           <div className="space-y-1">
             {blocked.map((b) => (
@@ -341,7 +345,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
       {/* Confidentialité */}
       <Link
         href="/confidentialite"
-        className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-soft border border-ink-900/5"
+        className="flex items-center justify-between bg-surface rounded-2xl px-4 py-3.5 shadow-soft border border-ink-900/5"
       >
         <span className="text-sm font-extrabold">🔏 Confidentialité & données (RGPD)</span>
         <span className="text-ink-700/40 text-lg">→</span>

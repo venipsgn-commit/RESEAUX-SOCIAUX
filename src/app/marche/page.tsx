@@ -75,7 +75,7 @@ export default async function MarchePage() {
                 <Link
                   key={item.id}
                   href={`/post/${item.id}`}
-                  className="bg-white rounded-2xl overflow-hidden shadow-soft border border-ink-900/5 hover:shadow-lift transition cursor-pointer"
+                  className="bg-surface rounded-2xl overflow-hidden shadow-soft border border-ink-900/5 hover:shadow-lift transition cursor-pointer"
                 >
                   <div
                     className="aspect-square flex items-center justify-center text-[80px] relative"
@@ -91,7 +91,7 @@ export default async function MarchePage() {
                     ) : (
                       item.emoji
                     )}
-                    <div className="absolute top-2 left-2 bg-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                    <div className="absolute top-2 left-2 bg-surface px-2 py-0.5 rounded-full text-[10px] font-bold">
                       🚶 {formatDistance(item.distance_m)}
                     </div>
                     {item.type === 'service' && (

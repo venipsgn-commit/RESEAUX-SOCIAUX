@@ -109,7 +109,7 @@ export default async function UserProfilePage({ params }: { params: { handle: st
           </div>
 
           {/* Stats */}
-          <div className="mt-4 bg-white rounded-2xl p-3 shadow-soft border border-ink-900/5 flex">
+          <div className="mt-4 bg-surface rounded-2xl p-3 shadow-soft border border-ink-900/5 flex">
             {stat(prof.posts, 'publications')}
             {stat(prof.followers, 'abonnés')}
             {stat(prof.following, 'abonnements')}
@@ -138,7 +138,7 @@ export default async function UserProfilePage({ params }: { params: { handle: st
               Publications
             </div>
             {posts.length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-soft border border-ink-900/5 text-sm font-bold text-ink-700/60">
+              <div className="bg-surface rounded-2xl p-8 text-center shadow-soft border border-ink-900/5 text-sm font-bold text-ink-700/60">
                 Aucune publication.
               </div>
             ) : (

@@ -65,7 +65,7 @@ export function AlertsManager() {
 
   return (
     <div>
-      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <div className="text-sm font-extrabold">🔔 Nouvelle alerte</div>
         <p className="text-[12px] text-ink-700/60 mt-0.5">
           Reçois une notification dès qu&apos;une annonce contenant ton mot apparaît près de toi.
@@ -113,7 +113,7 @@ export function AlertsManager() {
           {alerts.map((a) => (
             <div
               key={a.id}
-              className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5"
+              className="flex items-center gap-3 bg-surface rounded-2xl px-4 py-3 shadow-soft border border-ink-900/5"
             >
               <span className="text-lg">🔔</span>
               <div className="flex-1 min-w-0">

@@ -323,7 +323,7 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                 } rounded-3xl ${
                   mine
                     ? 'bg-ink-900 text-cream-50 rounded-br-lg'
-                    : 'bg-white border border-ink-900/5 shadow-soft rounded-bl-lg'
+                    : 'bg-surface border border-ink-900/5 shadow-soft rounded-bl-lg'
                 }`}
               >
                 {m.attachment_type === 'image' && m.attachment_url && (
@@ -404,7 +404,7 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
 
         {otherTyping && (
           <div className="flex justify-start">
-            <div className="bg-white border border-ink-900/5 shadow-soft rounded-3xl rounded-bl-lg px-4 py-3 flex items-center gap-1 text-ink-700/60">
+            <div className="bg-surface border border-ink-900/5 shadow-soft rounded-3xl rounded-bl-lg px-4 py-3 flex items-center gap-1 text-ink-700/60">
               <span className="typing-dot" style={{ animationDelay: '0ms' }} />
               <span className="typing-dot" style={{ animationDelay: '150ms' }} />
               <span className="typing-dot" style={{ animationDelay: '300ms' }} />
@@ -469,7 +469,7 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
               }}
               placeholder={uploading ? 'Envoi du média…' : 'Écris un message…'}
               disabled={uploading}
-              className="flex-1 bg-white rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/5 focus:ring-2 focus:ring-forest-500 disabled:opacity-60"
+              className="flex-1 bg-surface rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/5 focus:ring-2 focus:ring-forest-500 disabled:opacity-60"
             />
             {draft.trim() ? (
               <button

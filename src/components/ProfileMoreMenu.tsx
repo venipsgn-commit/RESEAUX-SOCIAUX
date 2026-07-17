@@ -67,13 +67,13 @@ export function ProfileMoreMenu({
               <div className="w-10 h-1 rounded-full bg-ink-900/15 mx-auto mb-4" />
               <button
                 onClick={report}
-                className="w-full text-left px-4 py-3.5 rounded-2xl bg-white border border-ink-900/5 font-bold text-sm mb-2"
+                className="w-full text-left px-4 py-3.5 rounded-2xl bg-surface border border-ink-900/5 font-bold text-sm mb-2"
               >
                 🚩 Signaler ce profil
               </button>
               <button
                 onClick={toggleBlock}
-                className="w-full text-left px-4 py-3.5 rounded-2xl bg-white border border-ink-900/5 font-bold text-sm text-coral-500"
+                className="w-full text-left px-4 py-3.5 rounded-2xl bg-surface border border-ink-900/5 font-bold text-sm text-coral-500"
               >
                 {isBlocked ? `✅ Débloquer @${handle}` : `🚫 Bloquer @${handle}`}
               </button>

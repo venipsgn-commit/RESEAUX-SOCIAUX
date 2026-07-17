@@ -57,7 +57,7 @@ export function NewGroupForm() {
         onChange={(e) => setName(e.target.value)}
         maxLength={50}
         placeholder="Nom du groupe (ex : Voisins Bastille)"
-        className="w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+        className="w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
       />
 
       <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mt-4 mb-2">

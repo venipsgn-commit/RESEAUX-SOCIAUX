@@ -25,7 +25,7 @@ export default async function ProfilPage() {
         <div className="max-w-md mx-auto px-4 pt-24 lg:pt-40 text-center">
           <div className="relative w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center mb-4 shadow-lift">
             <div className="absolute inset-0 rounded-full bg-forest-400 animate-ping-slow opacity-30" />
-            <div className="relative w-4 h-4 rounded-full bg-white" />
+            <div className="relative w-4 h-4 rounded-full bg-surface" />
           </div>
           <h1 className="text-2xl font-black">Ton profil t&apos;attend.</h1>
           <p className="text-sm text-ink-700/60 mt-2">
@@ -134,7 +134,7 @@ export default async function ProfilPage() {
           </div>
 
           {/* Stats cliquables */}
-          <div className="mt-4 bg-white rounded-2xl p-2 shadow-soft border border-ink-900/5">
+          <div className="mt-4 bg-surface rounded-2xl p-2 shadow-soft border border-ink-900/5">
             <ProfileStats posts={stats.posts} followers={stats.followers} following={stats.following} />
           </div>
 
@@ -182,21 +182,21 @@ export default async function ProfilPage() {
           <div className="grid grid-cols-2 gap-2.5">
             <Link
               href="/commandes"
-              className="flex items-center gap-2.5 bg-white rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
+              className="flex items-center gap-2.5 bg-surface rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
             >
               <span className="text-xl">🧾</span>
               <div className="font-extrabold text-sm leading-tight">Mes commandes</div>
             </Link>
             <Link
               href="/enregistres"
-              className="flex items-center gap-2.5 bg-white rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
+              className="flex items-center gap-2.5 bg-surface rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
             >
               <span className="text-xl">🔖</span>
               <div className="font-extrabold text-sm leading-tight">Enregistrés</div>
             </Link>
             <Link
               href="/alertes"
-              className="col-span-2 flex items-center gap-2.5 bg-white rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
+              className="col-span-2 flex items-center gap-2.5 bg-surface rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
             >
               <span className="text-xl">🔔</span>
               <div className="font-extrabold text-sm leading-tight">Mes alertes de quartier</div>
@@ -220,7 +220,7 @@ export default async function ProfilPage() {
               <div className="text-[11px] text-ink-700/50 font-bold">{posts.length}</div>
             </div>
             {posts.length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-soft border border-ink-900/5">
+              <div className="bg-surface rounded-2xl p-8 text-center shadow-soft border border-ink-900/5">
                 <div className="text-4xl mb-2">📦</div>
                 <p className="text-sm font-bold">Aucune publication pour l&apos;instant.</p>
                 <Link

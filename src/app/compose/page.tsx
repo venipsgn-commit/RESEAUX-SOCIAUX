@@ -114,7 +114,7 @@ export default function ComposePage() {
                   key={t.id}
                   onClick={() => setType(t.id)}
                   className={clsx(
-                    'p-3 rounded-2xl shadow-soft text-center transition bg-white',
+                    'p-3 rounded-2xl shadow-soft text-center transition bg-surface',
                     type === t.id && 'ring-2 ring-sunset-500',
                   )}
                 >
@@ -151,7 +151,7 @@ export default function ComposePage() {
               <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mb-2">
                 Ou choisis un emoji
               </div>
-              <div className="bg-white rounded-2xl p-3 shadow-soft border border-ink-900/5 flex flex-wrap gap-1.5">
+              <div className="bg-surface rounded-2xl p-3 shadow-soft border border-ink-900/5 flex flex-wrap gap-1.5">
                 {EMOJIS.map((e) => (
                   <button
                     key={e}
@@ -169,7 +169,7 @@ export default function ComposePage() {
           )}
 
           {/* Form */}
-          <div className="bg-white rounded-3xl p-4 shadow-soft border border-ink-900/5">
+          <div className="bg-surface rounded-3xl p-4 shadow-soft border border-ink-900/5">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}

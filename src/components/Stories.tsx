@@ -829,7 +829,7 @@ function StoryViewer({
           {group.stories.map((s, i) => (
             <div key={s.id} className="flex-1 h-[3px] rounded-full bg-white/30 overflow-hidden">
               <div
-                className="h-full bg-white rounded-full"
+                className="h-full bg-surface rounded-full"
                 style={{
                   width: i < si ? '100%' : i === si ? `${progress}%` : '0%',
                   transition: i === si ? 'width 40ms linear' : 'none',

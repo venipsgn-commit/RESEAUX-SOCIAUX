@@ -27,7 +27,7 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
     post.type === 'sell' || post.type === 'service' || post.type === 'event' || post.type === 'geolock';
 
   return (
-    <article className="bg-white rounded-2xl overflow-hidden border border-ink-900/5 shadow-soft">
+    <article className="bg-surface rounded-2xl overflow-hidden border border-ink-900/5 shadow-soft">
       {/* EN-TÊTE — façon Facebook */}
       <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
         <Link href={`/u/${post.author_handle}`} className="relative flex-shrink-0">

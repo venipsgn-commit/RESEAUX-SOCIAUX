@@ -62,7 +62,7 @@ export function ProfileStats({
       {slot &&
         open &&
         createPortal(
-          <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5 animate-fade-up">
+          <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5 animate-fade-up">
             <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50 mb-2">
               {open === 'followers' ? 'Mes abonnés' : 'Mes abonnements'}
             </div>

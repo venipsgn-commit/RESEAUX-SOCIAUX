@@ -104,7 +104,7 @@ export function BuyButton({
                   className={`w-full text-left rounded-2xl p-4 border-2 transition ${
                     method === 'cash_on_delivery'
                       ? 'border-forest-500 bg-forest-500/5'
-                      : 'border-ink-900/10 bg-white'
+                      : 'border-ink-900/10 bg-surface'
                   }`}
                 >
                   <div className="font-extrabold text-sm flex items-center gap-2">💵 Paiement à la livraison</div>
@@ -116,7 +116,7 @@ export function BuyButton({
                 <button
                   onClick={() => setMethod('online')}
                   className={`w-full text-left rounded-2xl p-4 border-2 transition ${
-                    method === 'online' ? 'border-forest-500 bg-forest-500/5' : 'border-ink-900/10 bg-white'
+                    method === 'online' ? 'border-forest-500 bg-forest-500/5' : 'border-ink-900/10 bg-surface'
                   }`}
                 >
                   <div className="font-extrabold text-sm flex items-center gap-2">
@@ -137,7 +137,7 @@ export function BuyButton({
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={200}
                 placeholder="Message au vendeur (lieu, horaire…)"
-                className="mt-3 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10"
+                className="mt-3 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10"
               />
 
               <button

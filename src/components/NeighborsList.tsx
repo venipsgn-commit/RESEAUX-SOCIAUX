@@ -81,7 +81,7 @@ export function NeighborsList({ lat, lng, radius = 2000 }: { lat: number; lng: n
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="🔍 Rechercher un voisin…"
-        className="w-full bg-white rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/10 shadow-soft mb-3"
+        className="w-full bg-surface rounded-full px-4 py-2.5 text-sm outline-none border border-ink-900/10 shadow-soft mb-3"
       />
 
       {shown.length === 0 ? (

@@ -47,7 +47,7 @@ export function EditPostForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={100}
-          className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+          className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
         />
       </div>
       <div>
@@ -57,7 +57,7 @@ export function EditPostForm({
           onChange={(e) => setBody(e.target.value)}
           rows={4}
           maxLength={1000}
-          className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft resize-none"
+          className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft resize-none"
         />
       </div>
       {hasPrice && (
@@ -68,7 +68,7 @@ export function EditPostForm({
             onChange={(e) => setPrice(e.target.value)}
             inputMode="decimal"
             placeholder="ex : 25"
-            className="mt-1.5 w-full bg-white rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
+            className="mt-1.5 w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
           />
         </div>
       )}
