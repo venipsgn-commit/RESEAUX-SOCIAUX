@@ -44,7 +44,7 @@ export default function ConnexionPage() {
         });
         if (error) throw error;
         if (data.session) {
-          router.push('/voisinage');
+          router.push('/bienvenue');
           router.refresh();
         } else {
           // Pas de session renvoyée (confirmation email activée côté config) :
@@ -57,7 +57,7 @@ export default function ConnexionPage() {
             setInfo('Compte créé ! Tu peux maintenant te connecter.');
             setMode('login');
           } else {
-            router.push('/voisinage');
+            router.push('/bienvenue');
             router.refresh();
           }
         }
@@ -79,6 +79,22 @@ export default function ConnexionPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function forgotPassword() {
+    if (!email) {
+      setError('Entre ton email d’abord, puis clique sur « Mot de passe oublié ».');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reinitialiser`,
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setInfo('E-mail de réinitialisation envoyé ! Vérifie ta boîte mail (et les spams).');
   }
 
   return (
@@ -168,6 +184,18 @@ export default function ConnexionPage() {
                 className="w-full text-sm font-semibold outline-none bg-transparent mt-0.5"
               />
             </div>
+
+            {mode === 'login' && (
+              <div className="text-right -mt-1">
+                <button
+                  type="button"
+                  onClick={forgotPassword}
+                  className="text-xs font-bold text-forest-600"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="bg-coral-400/10 border border-coral-400/30 rounded-2xl px-4 py-3 text-xs font-semibold text-coral-500">
