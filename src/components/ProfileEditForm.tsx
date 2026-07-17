@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from '@/lib/toast';
+
+type Blocked = { user_id: string; handle: string; display_name: string | null; avatar_emoji: string };
 
 const EMOJIS = ['📍', '😊', '🌻', '🎨', '🔧', '🥖', '🚀', '🐱', '🐶', '🌊', '⚽', '🎸', '📚', '☕', '🌸', '🦊', '🍕', '🎯', '💡', '🌙'];
 
@@ -39,6 +42,33 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
   const [pw1, setPw1] = useState('');
   const [pw2, setPw2] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
+  const [blocked, setBlocked] = useState<Blocked[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    supabase.rpc('my_blocked').then(({ data }) => setBlocked((data ?? []) as Blocked[]));
+  }, [supabase]);
+
+  async function unblock(id: string, handle: string) {
+    setBlocked((b) => b.filter((x) => x.user_id !== id));
+    await supabase.rpc('unblock_user', { other: id });
+    toast({ icon: '✅', title: `@${handle} débloqué·e` });
+  }
+
+  async function deleteAccount() {
+    if (deleting) return;
+    setDeleting(true);
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) {
+      setDeleting(false);
+      toast({ icon: '⚠️', title: 'Oups', text: 'La suppression a échoué.' });
+      return;
+    }
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  }
 
   async function changePassword() {
     if (pwBusy) return;
@@ -280,6 +310,74 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         >
           {pwBusy ? '…' : 'Mettre à jour le mot de passe'}
         </button>
+      </div>
+
+      {/* Comptes bloqués */}
+      {blocked.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+          <div className="text-sm font-extrabold mb-2">🚫 Comptes bloqués</div>
+          <div className="space-y-1">
+            {blocked.map((b) => (
+              <div key={b.user_id} className="flex items-center gap-3 py-1.5">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-base flex-shrink-0">
+                  {b.avatar_emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm truncate">{b.display_name || b.handle}</div>
+                  <div className="text-[11px] text-ink-700/50 truncate">@{b.handle}</div>
+                </div>
+                <button
+                  onClick={() => unblock(b.user_id, b.handle)}
+                  className="px-3 py-1.5 bg-sand-200 text-ink-900 rounded-full text-xs font-bold"
+                >
+                  Débloquer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Confidentialité */}
+      <Link
+        href="/confidentialite"
+        className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-soft border border-ink-900/5"
+      >
+        <span className="text-sm font-extrabold">🔏 Confidentialité & données (RGPD)</span>
+        <span className="text-ink-700/40 text-lg">→</span>
+      </Link>
+
+      {/* Zone dangereuse — supprimer le compte */}
+      <div className="bg-coral-500/5 rounded-2xl p-4 border border-coral-500/20">
+        <div className="text-sm font-extrabold text-coral-500">Supprimer mon compte</div>
+        <p className="text-[12px] text-ink-700/60 mt-0.5">
+          Efface définitivement ton compte et toutes tes données (annonces, messages, stories…).
+          Irréversible.
+        </p>
+        {confirmDelete ? (
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={deleteAccount}
+              disabled={deleting}
+              className="flex-1 py-2.5 bg-coral-500 text-white rounded-full font-extrabold text-sm disabled:opacity-60"
+            >
+              {deleting ? 'Suppression…' : 'Oui, supprimer définitivement'}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-4 py-2.5 bg-sand-200 text-ink-900 rounded-full font-bold text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="mt-3 w-full py-2.5 border-2 border-coral-500 text-coral-500 rounded-full font-extrabold text-sm"
+          >
+            Supprimer mon compte
+          </button>
+        )}
       </div>
     </div>
   );
