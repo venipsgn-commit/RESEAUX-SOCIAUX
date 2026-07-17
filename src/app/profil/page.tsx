@@ -194,6 +194,14 @@ export default async function ProfilPage() {
               <span className="text-xl">🔖</span>
               <div className="font-extrabold text-sm leading-tight">Enregistrés</div>
             </Link>
+            <Link
+              href="/alertes"
+              className="col-span-2 flex items-center gap-2.5 bg-white rounded-2xl px-3.5 py-3 shadow-soft border border-ink-900/5"
+            >
+              <span className="text-xl">🔔</span>
+              <div className="font-extrabold text-sm leading-tight">Mes alertes de quartier</div>
+              <span className="ml-auto text-ink-700/40 text-lg">→</span>
+            </Link>
           </div>
 
           {/* Invitations reçues (Accepter / Refuser) */}

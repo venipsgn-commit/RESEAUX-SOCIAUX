@@ -103,7 +103,8 @@ export type NotifType =
   | 'follow'
   | 'story_like'
   | 'story_comment'
-  | 'order';
+  | 'order'
+  | 'alert';
 
 export type NotifItem = {
   id: string;
