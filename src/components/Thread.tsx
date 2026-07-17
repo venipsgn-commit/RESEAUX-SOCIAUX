@@ -12,6 +12,8 @@ type Props = {
   meId: string;
   initialMessages: Message[];
   initialOtherReadAt?: string | null;
+  isGroup?: boolean;
+  senders?: Record<string, { name: string; emoji: string }>;
 };
 
 /** Compresse une image côté client (max 1280px, JPEG 0.82). */
@@ -43,7 +45,7 @@ function fmtTime(s: number) {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 
-export function Thread({ conversationId, meId, initialMessages, initialOtherReadAt }: Props) {
+export function Thread({ conversationId, meId, initialMessages, initialOtherReadAt, isGroup = false, senders = {} }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -309,7 +311,12 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
 
           const hasMedia = !!m.attachment_url;
           return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+            <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+              {isGroup && !mine && senders[m.sender_id] && (
+                <span className="text-[10px] font-bold text-forest-600 mb-0.5 px-2">
+                  {senders[m.sender_id].emoji} {senders[m.sender_id].name}
+                </span>
+              )}
               <div
                 className={`max-w-[80%] text-sm ${
                   hasMedia ? 'p-1.5' : 'px-4 py-2.5'

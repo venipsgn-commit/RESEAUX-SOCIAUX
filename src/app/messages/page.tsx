@@ -41,8 +41,20 @@ export default async function MessagesPage() {
     <Shell>
       <MessagesListRefresher uid={user.id} convIds={conversations.map((c) => c.conversation_id)} />
       <div className="max-w-2xl mx-auto">
-        <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3">
+        <header className="sticky top-0 z-30 bg-cream-50/95 backdrop-blur-xl border-b border-ink-900/5 px-4 lg:px-8 py-3 flex items-center justify-between">
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">Messages</h1>
+          <Link
+            href="/messages/nouveau"
+            className="flex items-center gap-1.5 bg-forest-500 text-white text-xs font-bold px-3 py-2 rounded-full shadow-soft"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            Groupe
+          </Link>
         </header>
 
         <InvitationList title="Demandes de connexion" />
