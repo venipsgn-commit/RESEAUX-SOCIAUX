@@ -5,6 +5,7 @@ import { ReactionBar } from '@/components/ReactionBar';
 import { DeletePostButton } from '@/components/DeletePostButton';
 import { ContactButton } from '@/components/ContactButton';
 import { BuyButton } from '@/components/BuyButton';
+import { RsvpButton } from '@/components/RsvpButton';
 import { Comments } from '@/components/Comments';
 import { createClient } from '@/lib/supabase/server';
 import { type PostDetail, POST_TYPE_META, formatPrice, timeAgo } from '@/lib/types';
@@ -111,6 +112,13 @@ export default async function PostPage({ params }: { params: { id: string } }) {
               <div className="text-[11px] uppercase tracking-wider font-bold text-ink-700/50">
                 C&apos;est ton post
               </div>
+              {post.type === 'event' && <RsvpButton postId={post.id} />}
+              <Link
+                href={`/post/${post.id}/modifier`}
+                className="block text-center w-full py-2.5 bg-sand-200 text-ink-900 rounded-full font-extrabold text-sm shadow-soft"
+              >
+                ✏️ Modifier l&apos;annonce
+              </Link>
               <DeletePostButton postId={post.id} redirectTo="/profil" variant="full" />
             </div>
           ) : (
@@ -132,11 +140,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                   accent="from-coral-400 to-coral-500"
                 />
               )}
-              {post.type === 'event' && (
-                <button className="w-full py-3 bg-sunset-500 text-white rounded-full font-extrabold text-sm shadow-soft">
-                  Je viens 🙋
-                </button>
-              )}
+              {post.type === 'event' && <RsvpButton postId={post.id} />}
               {post.type === 'geolock' && (
                 <button className="w-full py-3 bg-gradient-to-br from-lilac-300 to-lilac-500 text-white rounded-full font-extrabold text-sm shadow-soft">
                   🚶 M&apos;y rendre pour débloquer
