@@ -30,7 +30,7 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
     <article className="bg-white rounded-2xl overflow-hidden border border-ink-900/5 shadow-soft">
       {/* EN-TÊTE — façon Facebook */}
       <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
-        <div className="relative flex-shrink-0">
+        <Link href={`/u/${post.author_handle}`} className="relative flex-shrink-0">
           <div className="w-11 h-11 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin overflow-hidden">
             {post.author_avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -40,10 +40,12 @@ function PostCard({ post, likedByMe }: { post: NearbyPost; likedByMe: boolean })
             )}
           </div>
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-forest-500 rounded-full border-2 border-white" />
-        </div>
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-[15px] leading-tight truncate">{post.author_handle}</span>
+            <Link href={`/u/${post.author_handle}`} className="font-bold text-[15px] leading-tight truncate">
+              {post.author_handle}
+            </Link>
             <span className={`chip ${meta.chipClass} flex-shrink-0`}>{meta.label}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[12px] text-ink-700/55 mt-0.5">
@@ -270,6 +272,16 @@ export default async function VoisinagePage() {
                   Rejoindre
                 </Link>
               )}
+              <Link
+                href="/recherche"
+                aria-label="Rechercher"
+                className="relative flex items-center justify-center text-ink-900"
+              >
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </Link>
               <Link
                 href="/voisins"
                 aria-label="Découvrir mes voisins"

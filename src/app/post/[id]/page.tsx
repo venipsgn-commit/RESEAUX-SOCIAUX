@@ -39,7 +39,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
 
         <div className="px-3 lg:px-8 py-4 space-y-4">
           {/* Auteur */}
-          <div className="flex items-center gap-3">
+          <Link href={`/u/${post.author_handle}`} className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-xl shadow-pin">
               {post.author_avatar_emoji}
             </div>
@@ -50,7 +50,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                 <b className="text-forest-600">{post.author_neighbor_score}</b> · {timeAgo(post.created_at)}
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Visuel */}
           <div

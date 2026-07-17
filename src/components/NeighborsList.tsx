@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from '@/lib/toast';
@@ -112,13 +113,13 @@ export function NeighborsList({ lat, lng, radius = 2000 }: { lat: number; lng: n
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
+              <Link href={`/u/${n.handle}`} className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{n.display_name || n.handle}</div>
                 <div className="text-[11px] text-ink-700/50 truncate">
                   @{n.handle} · à {formatDistance(n.distance_m)}
                   {n.is_online ? ' · en ligne' : ''}
                 </div>
-              </div>
+              </Link>
 
               {n.status === 'accepted' ? (
                 <button
