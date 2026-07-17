@@ -14,6 +14,7 @@ type EditProfile = {
   bio: string | null;
   tagline: string | null;
   aura_radius_m: number;
+  visibility_radius_m: number;
   is_pro: boolean;
   is_private: boolean;
 };
@@ -30,9 +31,36 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
   const [bio, setBio] = useState(profile.bio ?? '');
   const [tagline, setTagline] = useState(profile.tagline ?? '');
   const [radius, setRadius] = useState(profile.aura_radius_m ?? 500);
+  const [visRadius, setVisRadius] = useState(profile.visibility_radius_m ?? 10000);
   const [isPro, setIsPro] = useState(profile.is_pro ?? false);
   const [isPrivate, setIsPrivate] = useState(profile.is_private ?? false);
   const [saving, setSaving] = useState(false);
+  // Changement de mot de passe
+  const [pw1, setPw1] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+
+  async function changePassword() {
+    if (pwBusy) return;
+    if (pw1.length < 6) {
+      toast({ icon: '⚠️', title: 'Mot de passe trop court', text: '6 caractères minimum.' });
+      return;
+    }
+    if (pw1 !== pw2) {
+      toast({ icon: '⚠️', title: 'Les mots de passe ne correspondent pas' });
+      return;
+    }
+    setPwBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: pw1 });
+    setPwBusy(false);
+    if (!error) {
+      setPw1('');
+      setPw2('');
+      toast({ icon: '🔐', title: 'Mot de passe modifié !' });
+    } else {
+      toast({ icon: '⚠️', title: 'Oups', text: 'Le mot de passe n’a pas pu être changé.' });
+    }
+  }
 
   const maxRadius = isPro ? 10000 : 1000;
 
@@ -53,6 +81,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         bio: bio.trim() || null,
         tagline: tagline.trim() || null,
         aura_radius_m: Math.min(radius, maxRadius),
+        visibility_radius_m: visRadius,
         is_private: isPrivate,
       })
       .eq('id', profile.id);
@@ -167,6 +196,30 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         )}
       </div>
 
+      {/* Rayon de visibilité (qui peut me voir) */}
+      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-extrabold">👁️ Qui peut me voir</label>
+          <span className="text-forest-600 font-black">{fmtRadius(visRadius)}</span>
+        </div>
+        <div className="text-[11px] text-ink-700/55 mt-0.5">
+          Les voisins ne te voient sur la carte que dans ce rayon autour de toi.
+        </div>
+        <input
+          type="range"
+          min={100}
+          max={10000}
+          step={100}
+          value={visRadius}
+          onChange={(e) => setVisRadius(Number(e.target.value))}
+          className="mt-3 w-full accent-forest-500"
+        />
+        <div className="flex justify-between text-[10px] font-bold text-ink-700/50 mt-1">
+          <span>100 m</span>
+          <span>10 km (max)</span>
+        </div>
+      </div>
+
       {/* Confidentialité */}
       <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
         <button
@@ -194,7 +247,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
         </button>
       </div>
 
-      {/* Enregistrer */}
+      {/* Enregistrer le profil */}
       <button
         onClick={save}
         disabled={saving}
@@ -202,6 +255,32 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
       >
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </button>
+
+      {/* Changer de mot de passe */}
+      <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
+        <div className="text-sm font-extrabold mb-2">🔐 Changer de mot de passe</div>
+        <input
+          type="password"
+          value={pw1}
+          onChange={(e) => setPw1(e.target.value)}
+          placeholder="Nouveau mot de passe"
+          className="w-full bg-cream-50 rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 mb-2"
+        />
+        <input
+          type="password"
+          value={pw2}
+          onChange={(e) => setPw2(e.target.value)}
+          placeholder="Confirme le mot de passe"
+          className="w-full bg-cream-50 rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10"
+        />
+        <button
+          onClick={changePassword}
+          disabled={pwBusy || !pw1 || !pw2}
+          className="mt-3 w-full py-3 bg-ink-900 text-cream-50 rounded-full font-extrabold text-sm disabled:opacity-50"
+        >
+          {pwBusy ? '…' : 'Mettre à jour le mot de passe'}
+        </button>
+      </div>
     </div>
   );
 }

@@ -52,6 +52,7 @@ export default async function EditProfilePage() {
               bio: profile.bio,
               tagline: profile.tagline,
               aura_radius_m: profile.aura_radius_m,
+              visibility_radius_m: profile.visibility_radius_m,
               is_pro: profile.is_pro,
               is_private: profile.is_private,
             }}

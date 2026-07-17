@@ -63,6 +63,7 @@ export type Profile = {
   lat: number | null;
   lng: number | null;
   aura_radius_m: number;
+  visibility_radius_m: number;
   neighbor_score: number;
   is_pro: boolean;
   is_private: boolean;
