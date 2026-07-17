@@ -61,6 +61,7 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
   const [reactions, setReactions] = useState<Record<string, Record<string, string>>>({});
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const QUICK_REACT = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -227,6 +228,27 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
     ));
   }
 
+  // Libellé de l'auteur d'un message (pour la citation)
+  function senderLabel(msg: Message): string {
+    if (msg.sender_id === meId) return 'Toi';
+    if (senders[msg.sender_id]) return senders[msg.sender_id].name;
+    return 'Voisin';
+  }
+
+  // Aperçu textuel court d'un message (pour la citation)
+  function previewText(msg: Message): string {
+    if (msg.deleted || deletedIds.has(msg.id)) return 'Message supprimé';
+    if (msg.body && msg.body.trim()) {
+      const b = msg.body.trim();
+      return b.length > 90 ? `${b.slice(0, 90)}…` : b;
+    }
+    if (msg.attachment_type === 'image') return '📷 Photo';
+    if (msg.attachment_type === 'video') return '🎥 Vidéo';
+    if (msg.attachment_type === 'audio') return '🎤 Message vocal';
+    if (msg.attachment_type === 'story') return '↩︎ Réponse à la story';
+    return 'Message';
+  }
+
   async function insertMessage(fields: Partial<Message>) {
     const { data, error } = await supabase
       .from('messages')
@@ -246,8 +268,13 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
     if (!body || sending) return;
     setSending(true);
     setDraft('');
-    const ok = await insertMessage({ body });
-    if (!ok) setDraft(body);
+    const replyId = replyingTo?.id ?? null;
+    setReplyingTo(null);
+    const ok = await insertMessage({ body, reply_to: replyId });
+    if (!ok) {
+      setDraft(body);
+      if (replyId) setReplyingTo(messages.find((m) => m.id === replyId) ?? null);
+    }
     setSending(false);
   }
 
@@ -399,8 +426,9 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
           }
 
           const hasMedia = !!m.attachment_url;
+          const repliedMsg = m.reply_to ? messages.find((x) => x.id === m.reply_to) : null;
           return (
-            <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+            <div key={m.id} id={`msg-${m.id}`} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
               {isGroup && !mine && senders[m.sender_id] && (
                 <span className="text-[10px] font-bold text-forest-600 mb-0.5 px-2">
                   {senders[m.sender_id].emoji} {senders[m.sender_id].name}
@@ -415,6 +443,36 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                     : 'bg-surface border border-ink-900/5 shadow-soft rounded-bl-lg'
                 }`}
               >
+                {(repliedMsg || m.reply_to) && (
+                  <button
+                    onClick={() => {
+                      if (!repliedMsg) return;
+                      document
+                        .getElementById(`msg-${repliedMsg.id}`)
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    className={`block w-full text-left mb-1 pl-2 pr-2.5 py-1 rounded-xl border-l-2 ${
+                      mine
+                        ? 'bg-cream-50/10 border-cream-50/50'
+                        : 'bg-ink-900/[0.04] border-forest-500/60'
+                    }`}
+                  >
+                    <div
+                      className={`text-[10px] font-bold leading-tight ${
+                        mine ? 'text-cream-50/70' : 'text-forest-600'
+                      }`}
+                    >
+                      {repliedMsg ? senderLabel(repliedMsg) : ''}
+                    </div>
+                    <div
+                      className={`text-[11px] leading-snug truncate ${
+                        mine ? 'text-cream-50/55' : 'text-ink-700/55'
+                      }`}
+                    >
+                      {repliedMsg ? previewText(repliedMsg) : 'Message indisponible'}
+                    </div>
+                  </button>
+                )}
                 {m.attachment_type === 'image' && m.attachment_url && (
                   <a href={m.attachment_url} target="_blank" rel="noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -503,6 +561,16 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                       {e}
                     </button>
                   ))}
+                  <button
+                    onClick={() => {
+                      setReplyingTo(m);
+                      setPickerFor(null);
+                    }}
+                    aria-label="Répondre à ce message"
+                    className="text-lg pl-1.5 ml-0.5 border-l border-ink-900/10 active:scale-110 transition"
+                  >
+                    ↩️
+                  </button>
                   {mine && (
                     <button
                       onClick={() => deleteMsg(m.id)}
@@ -556,6 +624,24 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
           onChange={onPickFile}
           className="hidden"
         />
+
+        {replyingTo && !recording && (
+          <div className="flex items-center gap-2 mb-2 pl-3 pr-2 py-1.5 rounded-xl bg-surface border-l-2 border-forest-500 border-y border-r border-ink-900/5">
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold text-forest-600 leading-tight">
+                ↩︎ Réponse à {senderLabel(replyingTo)}
+              </div>
+              <div className="text-[11px] text-ink-700/55 truncate">{previewText(replyingTo)}</div>
+            </div>
+            <button
+              onClick={() => setReplyingTo(null)}
+              aria-label="Annuler la réponse"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-ink-700/50 active:bg-ink-900/5 flex-shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {recording ? (
           <div className="flex items-center gap-3">
