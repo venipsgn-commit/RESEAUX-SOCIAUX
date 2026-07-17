@@ -57,6 +57,10 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
   const [recSecs, setRecSecs] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [otherReadAt, setOtherReadAt] = useState<string | null>(initialOtherReadAt ?? null);
+  // Réactions aux messages : { [messageId]: { [userId]: emoji } }
+  const [reactions, setReactions] = useState<Record<string, Record<string, string>>>({});
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const QUICK_REACT = ['❤️', '😂', '👍', '😮', '😢', '🙏'];
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -128,6 +132,15 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
         if (!payload || payload.userId === meId || !payload.at) return;
         setOtherReadAt((prev) => (!prev || payload.at > prev ? payload.at : prev));
       })
+      .on('broadcast', { event: 'react' }, ({ payload }) => {
+        if (!payload) return;
+        setReactions((prev) => {
+          const m = { ...(prev[payload.messageId] ?? {}) };
+          if (payload.op === 'removed') delete m[payload.userId];
+          else m[payload.userId] = payload.emoji;
+          return { ...prev, [payload.messageId]: m };
+        });
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') markRead();
       });
@@ -146,6 +159,60 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
     if (now - lastTypingSentRef.current < 1200) return;
     lastTypingSentRef.current = now;
     channelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: meId } });
+  }
+
+  // Charge les réactions existantes des messages affichés
+  useEffect(() => {
+    const ids = messages.map((m) => m.id);
+    if (ids.length === 0) return;
+    supabase.rpc('message_reactions_for', { p_message_ids: ids }).then(({ data }) => {
+      const map: Record<string, Record<string, string>> = {};
+      ((data as { message_id: string; user_id: string; emoji: string }[]) ?? []).forEach((r) => {
+        (map[r.message_id] ??= {})[r.user_id] = r.emoji;
+      });
+      setReactions((prev) => ({ ...map, ...prev }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
+  async function react(messageId: string, emoji: string) {
+    setPickerFor(null);
+    const removed = reactions[messageId]?.[meId] === emoji;
+    setReactions((prev) => {
+      const m = { ...(prev[messageId] ?? {}) };
+      if (removed) delete m[meId];
+      else m[meId] = emoji;
+      return { ...prev, [messageId]: m };
+    });
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'react',
+      payload: { messageId, userId: meId, emoji, op: removed ? 'removed' : 'set' },
+    });
+    await supabase.rpc('toggle_message_reaction', { p_message_id: messageId, p_emoji: emoji });
+  }
+
+  function reactionChips(messageId: string) {
+    const rs = reactions[messageId];
+    if (!rs) return null;
+    const counts: Record<string, number> = {};
+    Object.values(rs).forEach((e) => {
+      counts[e] = (counts[e] || 0) + 1;
+    });
+    const entries = Object.entries(counts);
+    if (entries.length === 0) return null;
+    return entries.map(([e, c]) => (
+      <button
+        key={e}
+        onClick={() => react(messageId, e)}
+        className={`text-[11px] px-1.5 py-0.5 rounded-full border ${
+          rs[meId] === e ? 'bg-forest-500/15 border-forest-500/40' : 'bg-surface border-ink-900/10'
+        }`}
+      >
+        {e}
+        {c > 1 ? ` ${c}` : ''}
+      </button>
+    ));
   }
 
   async function insertMessage(fields: Partial<Message>) {
@@ -386,6 +453,36 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                   })}
                 </div>
               </div>
+
+              {/* Réactions + bouton réagir */}
+              <div className={`flex items-center gap-1 mt-0.5 ${mine ? 'flex-row-reverse pr-1' : 'pl-1'}`}>
+                <button
+                  onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}
+                  aria-label="Réagir"
+                  className="text-ink-700/30 text-sm leading-none active:scale-125 transition"
+                >
+                  ☺
+                </button>
+                {reactionChips(m.id)}
+              </div>
+
+              {pickerFor === m.id && (
+                <div
+                  className={`flex gap-1.5 mt-1 bg-surface rounded-full shadow-lift border border-ink-900/10 px-2.5 py-1.5 ${
+                    mine ? 'self-end' : 'self-start'
+                  }`}
+                >
+                  {QUICK_REACT.map((e) => (
+                    <button
+                      key={e}
+                      onClick={() => react(m.id, e)}
+                      className="text-xl active:scale-125 transition"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
