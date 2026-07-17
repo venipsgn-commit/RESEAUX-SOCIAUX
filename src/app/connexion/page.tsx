@@ -91,7 +91,7 @@ export default function ConnexionPage() {
               <div className="absolute inset-0 rounded-full bg-forest-400 animate-ping-slow opacity-30" />
               <div className="relative w-4 h-4 rounded-full bg-white" />
             </div>
-            <div className="text-4xl font-black tracking-tight">aura</div>
+            <div className="text-4xl font-black tracking-tight">AURA</div>
             <p className="hand text-xl text-coral-500 mt-1">Ton quartier, enfin vivant.</p>
           </div>
 

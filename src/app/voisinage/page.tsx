@@ -251,7 +251,7 @@ export default async function VoisinagePage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 lg:hidden">
               <div className="aura-logo" />
-              <span className="text-xl font-black tracking-tight">aura</span>
+              <span className="text-xl font-black tracking-tight">AURA</span>
               <span className="text-[11px] text-ink-700/50 font-semibold">
                 · {pos.quartier.split(' · ')[0]}
               </span>

@@ -65,7 +65,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <aside className="hidden lg:flex fixed top-0 left-0 h-[100dvh] w-72 border-r border-ink-900/5 flex-col p-6 bg-cream-50 z-40">
         <Link href="/" className="flex items-center gap-3 mb-8 flex-shrink-0">
           <div className="aura-logo" />
-          <span className="text-3xl font-black tracking-tight">aura</span>
+          <span className="text-3xl font-black tracking-tight">AURA</span>
         </Link>
         <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
           {/* Le profil est accessible via la carte "Mon profil" en bas. */}

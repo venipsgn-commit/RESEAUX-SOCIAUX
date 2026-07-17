@@ -3,6 +3,7 @@ import { Shell } from '@/components/Shell';
 import { LogoutButton } from '@/components/LogoutButton';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { CoverUpload } from '@/components/CoverUpload';
+import { AuraToggle } from '@/components/AuraToggle';
 import { ProfileStats } from '@/components/ProfileStats';
 import { InvitationList } from '@/components/InvitationList';
 import { createClient } from '@/lib/supabase/server';
@@ -198,31 +199,11 @@ export default async function ProfilPage() {
           {/* Invitations reçues (Accepter / Refuser) */}
           <InvitationList />
 
-          {/* AURA settings */}
-          <div className="bg-white rounded-2xl p-4 shadow-soft border border-ink-900/5">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="text-sm font-extrabold">📡 Mon AURA</div>
-                <div className="text-[11px] text-ink-700/55">Rayon · {profile?.aura_radius_m ?? 500}m</div>
-              </div>
-              <div className="w-10 h-6 bg-forest-500 rounded-full relative shadow-inner">
-                <div className="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow-soft" />
-              </div>
-            </div>
-            <div className="bg-sand-100 rounded-xl p-3">
-              <div className="flex justify-between text-[10px] font-bold text-ink-700/50 mb-2">
-                <span>100m</span>
-                <span className="text-forest-600">{profile?.aura_radius_m ?? 500}m</span>
-                <span>2km Pro</span>
-              </div>
-              <div className="relative h-1.5 bg-sand-200 rounded-full">
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-forest-400 to-forest-600 rounded-full"
-                  style={{ width: `${(((profile?.aura_radius_m ?? 500) - 100) / 1900) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
+          {/* AURA — activer / désactiver */}
+          <AuraToggle
+            initialActive={!(profile?.is_private ?? false)}
+            radius={profile?.aura_radius_m ?? 500}
+          />
 
           {/* Mes annonces */}
           <div>
