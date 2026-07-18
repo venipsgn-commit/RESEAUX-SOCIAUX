@@ -73,6 +73,22 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const cancelRecRef = useRef(false);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Appui long (façon WhatsApp) pour ouvrir les actions d'un message
+  function startPress(id: string) {
+    cancelPress();
+    pressTimerRef.current = setTimeout(() => {
+      setPickerFor(id);
+      if (navigator.vibrate) navigator.vibrate(15);
+    }, 420);
+  }
+  function cancelPress() {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -183,9 +199,20 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
 
   async function deleteMsg(messageId: string) {
     setPickerFor(null);
+    if (typeof window !== 'undefined' && !window.confirm('Supprimer ce message ?')) return;
+    setErr(null);
     setDeletedIds((prev) => new Set(prev).add(messageId));
     channelRef.current?.send({ type: 'broadcast', event: 'deleted', payload: { messageId } });
-    await supabase.rpc('delete_message', { p_id: messageId });
+    const { error } = await supabase.rpc('delete_message', { p_id: messageId });
+    if (error) {
+      // Échec : on annule la suppression optimiste et on prévient l'utilisateur.
+      setDeletedIds((prev) => {
+        const n = new Set(prev);
+        n.delete(messageId);
+        return n;
+      });
+      setErr('La suppression a échoué. Vérifie ta connexion et réessaie.');
+    }
   }
 
   async function react(messageId: string, emoji: string) {
@@ -435,7 +462,14 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
                 </span>
               )}
               <div
-                className={`max-w-[80%] text-sm ${
+                onTouchStart={() => startPress(m.id)}
+                onTouchEnd={cancelPress}
+                onTouchMove={cancelPress}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setPickerFor(pickerFor === m.id ? null : m.id);
+                }}
+                className={`max-w-[80%] text-sm select-none ${
                   hasMedia ? 'p-1.5' : 'px-4 py-2.5'
                 } rounded-3xl ${
                   mine
@@ -538,10 +572,10 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
               <div className={`flex items-center gap-1 mt-0.5 ${mine ? 'flex-row-reverse pr-1' : 'pl-1'}`}>
                 <button
                   onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}
-                  aria-label="Réagir"
-                  className="text-ink-700/30 text-sm leading-none active:scale-125 transition"
+                  aria-label="Réagir, répondre ou supprimer"
+                  className="text-ink-700/45 text-xs leading-none px-1.5 py-0.5 rounded-full bg-ink-900/[0.04] active:scale-110 transition"
                 >
-                  ☺
+                  ⋯
                 </button>
                 {reactionChips(m.id)}
               </div>
