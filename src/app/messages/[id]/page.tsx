@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { Shell } from '@/components/Shell';
 import { Thread } from '@/components/Thread';
 import { CallButtons } from '@/components/CallButtons';
+import { ConversationOptions } from '@/components/ConversationOptions';
 import { createClient } from '@/lib/supabase/server';
 import type { Message } from '@/lib/types';
 
@@ -26,7 +27,7 @@ export default async function ThreadPage({ params }: { params: { id: string } })
 
   // Membres + type de conversation (RLS : vide si non membre)
   const [{ data: members }, { data: conv }, { data: msgs }] = await Promise.all([
-    supabase.from('conversation_members').select('user_id, last_read_at').eq('conversation_id', params.id),
+    supabase.from('conversation_members').select('user_id, last_read_at, cleared_at').eq('conversation_id', params.id),
     supabase.from('conversations').select('is_group, title').eq('id', params.id).single(),
     supabase.from('messages').select('*').eq('conversation_id', params.id).order('created_at', { ascending: true }),
   ]);
@@ -35,7 +36,12 @@ export default async function ThreadPage({ params }: { params: { id: string } })
   if (!members.some((m) => m.user_id === user.id)) notFound();
 
   const isGroup = !!conv?.is_group;
-  const initialMessages = (msgs ?? []) as Message[];
+  // Si l'utilisateur a « supprimé » la conversation, on masque chez lui l'historique d'avant.
+  const myClearedAt = (members.find((m) => m.user_id === user.id)?.cleared_at as string | null) ?? null;
+  const allMessages = (msgs ?? []) as Message[];
+  const initialMessages = myClearedAt
+    ? allMessages.filter((m) => new Date(m.created_at) > new Date(myClearedAt))
+    : allMessages;
 
   const { data: memberProfiles } = await supabase
     .from('profiles')
@@ -66,17 +72,18 @@ export default async function ThreadPage({ params }: { params: { id: string } })
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-forest-400 to-forest-600 flex items-center justify-center text-lg shadow-pin">
             {isGroup ? '👥' : (other?.avatar_emoji ?? '📍')}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-extrabold text-sm truncate">
-              {isGroup ? (conv?.title ?? 'Groupe') : (other?.display_name ?? 'Voisin·e')}
-            </div>
-            <div className="text-[11px] text-ink-700/55 truncate">
-              {isGroup
+          <ConversationOptions
+            conversationId={params.id}
+            title={isGroup ? (conv?.title ?? 'Groupe') : (other?.display_name ?? 'Voisin·e')}
+            subtitle={
+              isGroup
                 ? `${members.length} membres · ${profs.map((p) => p.display_name || p.handle).slice(0, 3).join(', ')}${members.length > 3 ? '…' : ''}`
-                : `@${other?.handle} · Score `}
-              {!isGroup && <b className="text-forest-600">{other?.neighbor_score ?? 50}</b>}
-            </div>
-          </div>
+                : `@${other?.handle} · Score`
+            }
+            score={isGroup ? null : (other?.neighbor_score ?? 50)}
+            handle={other?.handle ?? null}
+            isGroup={isGroup}
+          />
           {!isGroup && otherId && (
             <CallButtons
               otherId={otherId}

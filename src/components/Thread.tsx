@@ -199,7 +199,6 @@ export function Thread({ conversationId, meId, initialMessages, initialOtherRead
 
   async function deleteMsg(messageId: string) {
     setPickerFor(null);
-    if (typeof window !== 'undefined' && !window.confirm('Supprimer ce message ?')) return;
     setErr(null);
     setDeletedIds((prev) => new Set(prev).add(messageId));
     channelRef.current?.send({ type: 'broadcast', event: 'deleted', payload: { messageId } });
