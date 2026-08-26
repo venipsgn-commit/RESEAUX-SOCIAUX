@@ -157,7 +157,7 @@ export function ReactionBar({
     };
     if (nav.share) {
       try {
-        await nav.share({ title: shareTitle ?? 'AURA', url });
+        await nav.share({ title: shareTitle ?? 'MonAura', url });
       } catch {
         /* annulé */
       }

@@ -36,7 +36,7 @@ export default async function ProfilPage() {
             href="/connexion"
             className="inline-block mt-6 px-8 py-3.5 bg-ink-900 text-cream-50 rounded-full font-extrabold text-sm shadow-lift"
           >
-            📍 Activer mon AURA
+            📍 Activer mon aura
           </Link>
         </div>
       </Shell>

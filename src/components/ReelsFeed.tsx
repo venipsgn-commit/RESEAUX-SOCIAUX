@@ -104,7 +104,7 @@ function ReelCard({ reel, uid }: { reel: Reel; uid: string | null }) {
   async function share() {
     const url = `${window.location.origin}/reels`;
     try {
-      if (navigator.share) await navigator.share({ title: 'Réel AURA', url });
+      if (navigator.share) await navigator.share({ title: 'Réel MonAura', url });
       else {
         await navigator.clipboard.writeText(url);
         alert('Lien copié !');

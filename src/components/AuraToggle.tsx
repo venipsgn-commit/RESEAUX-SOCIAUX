@@ -37,7 +37,7 @@ export function AuraToggle({ initialActive, radius }: { initialActive: boolean; 
     <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-extrabold">📡 Mon AURA</div>
+          <div className="text-sm font-extrabold">📡 Mon aura</div>
           <div className="text-[11px] text-ink-700/55">
             {active ? (
               <>

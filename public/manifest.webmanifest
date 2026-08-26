@@ -1,6 +1,6 @@
 {
-  "name": "AURA — ton quartier",
-  "short_name": "AURA",
+  "name": "MonAura — ton quartier",
+  "short_name": "MonAura",
   "description": "Le réseau social hyperlocal de ton quartier : voisins, annonces, stories, messages.",
   "start_url": "/voisinage",
   "scope": "/",

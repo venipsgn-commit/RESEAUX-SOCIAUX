@@ -24,7 +24,7 @@ export function ThemeToggle() {
     <div className="bg-surface rounded-2xl p-4 shadow-soft border border-ink-900/5 flex items-center justify-between">
       <div>
         <div className="text-sm font-extrabold">{dark ? '🌙 Mode sombre' : '☀️ Mode clair'}</div>
-        <div className="text-[11px] text-ink-700/55">Change l&apos;apparence d&apos;AURA</div>
+        <div className="text-[11px] text-ink-700/55">Change l&apos;apparence de MonAura</div>
       </div>
       <button
         onClick={toggle}

@@ -107,7 +107,7 @@ export default function ConnexionPage() {
               <div className="absolute inset-0 rounded-full bg-forest-400 animate-ping-slow opacity-30" />
               <div className="relative w-4 h-4 rounded-full bg-surface" />
             </div>
-            <div className="text-4xl font-black tracking-tight">AURA</div>
+            <div className="text-4xl font-black tracking-tight">MonAura</div>
             <p className="hand text-xl text-coral-500 mt-1">Ton quartier, enfin vivant.</p>
           </div>
 
@@ -213,7 +213,7 @@ export default function ConnexionPage() {
               disabled={loading}
               className="w-full py-3.5 bg-ink-900 text-cream-50 rounded-full font-extrabold text-sm shadow-lift disabled:opacity-50 hover:scale-[1.01] transition"
             >
-              {loading ? '…' : mode === 'signup' ? '📍 Activer mon AURA' : 'Se connecter'}
+              {loading ? '…' : mode === 'signup' ? '📍 Activer mon aura' : 'Se connecter'}
             </button>
           </form>
 

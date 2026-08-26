@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Shell } from '@/components/Shell';
 
-export const metadata = { title: 'Confidentialité · AURA' };
+export const metadata = { title: 'Confidentialité · MonAura' };
 
 export default function ConfidentialitePage() {
   return (
@@ -16,7 +16,7 @@ export default function ConfidentialitePage() {
 
         <div className="px-5 lg:px-8 py-5 space-y-5 text-sm text-ink-700/85 leading-relaxed pb-16">
           <p className="text-ink-900 font-semibold">
-            AURA est un réseau social hyperlocal : il utilise ta position pour te montrer les
+            MonAura est un réseau social hyperlocal : il utilise ta position pour te montrer les
             voisins, annonces et événements <b>autour de toi</b>. Voici comment tes données sont
             traitées.
           </p>
@@ -67,7 +67,7 @@ export default function ConfidentialitePage() {
           </section>
 
           <p className="text-[12px] text-ink-700/50 pt-2">
-            Pour toute question sur tes données, contacte l&apos;équipe AURA. Ce texte est un résumé
+            Pour toute question sur tes données, contacte l&apos;équipe MonAura. Ce texte est un résumé
             clair, pas un document juridique complet.
           </p>
         </div>

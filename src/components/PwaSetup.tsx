@@ -122,7 +122,7 @@ export function PwaSetup() {
         <div className="bg-cream-50 border border-ink-900/10 rounded-2xl shadow-lift px-4 py-3 flex items-center gap-3 animate-fade-up">
           <span className="text-xl">📲</span>
           <div className="flex-1 text-xs font-bold leading-tight text-ink-900">
-            Installe AURA sur ton écran d&apos;accueil.
+            Installe MonAura sur ton écran d&apos;accueil.
           </div>
           <button onClick={doInstall} className="bg-ink-900 text-cream-50 text-xs font-black px-3 py-1.5 rounded-full">
             Installer

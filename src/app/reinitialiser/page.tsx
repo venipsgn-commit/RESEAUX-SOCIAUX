@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-[100dvh] bg-cream-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <div className="text-4xl font-black tracking-tight">AURA</div>
+          <div className="text-4xl font-black tracking-tight">MonAura</div>
           <p className="text-sm text-ink-700/60 mt-1">Nouveau mot de passe</p>
         </div>
 

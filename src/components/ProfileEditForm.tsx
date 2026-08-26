@@ -98,7 +98,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
   async function goPro() {
     setIsPro(true);
     await supabase.from('profiles').update({ is_pro: true }).eq('id', profile.id);
-    toast({ icon: '🚀', title: 'Bienvenue dans AURA Pro !', text: 'Aura jusqu’à 2 km débloquée.' });
+    toast({ icon: '🚀', title: 'Bienvenue dans MonAura Pro !', text: 'Aura jusqu’à 2 km débloquée.' });
   }
 
   async function save() {
@@ -212,7 +212,7 @@ export function ProfileEditForm({ profile }: { profile: EditProfile }) {
 
         {!isPro ? (
           <div className="mt-3 bg-gradient-to-br from-sunset-300/40 to-sunset-500/15 rounded-2xl p-3.5 border border-sunset-500/20">
-            <div className="font-extrabold text-sm">🚀 AURA Pro</div>
+            <div className="font-extrabold text-sm">🚀 MonAura Pro</div>
             <div className="text-xs text-ink-700/70 mt-0.5">
               Étends ton aura <b>jusqu&apos;à 10 km</b> et touche encore plus de voisins.
             </div>

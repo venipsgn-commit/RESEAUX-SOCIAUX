@@ -1,4 +1,4 @@
-// AURA — service worker (installabilité PWA + notifications push)
+// MonAura — service worker (installabilité PWA + notifications push)
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -19,7 +19,7 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     data = { body: event.data && event.data.text ? event.data.text() : '' };
   }
-  const title = data.title || 'AURA';
+  const title = data.title || 'MonAura';
   const options = {
     body: data.body || '',
     icon: '/icon-192.png',

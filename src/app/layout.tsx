@@ -7,18 +7,18 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const caveat = Caveat({ subsets: ['latin'], variable: '--font-caveat' });
 
 export const metadata: Metadata = {
-  title: 'AURA — Le réseau social de ton quartier',
+  title: 'MonAura — Le réseau social de ton quartier',
   description:
-    'AURA n\'affiche que ce qui est dans ton rayon de 500m. Tes voisins, leurs ventes, leurs services, leurs événements. Le reste du monde n\'existe pas.',
-  metadataBase: new URL('https://aura.social'),
+    'MonAura n\'affiche que ce qui est dans ton rayon de 500m. Tes voisins, leurs ventes, leurs services, leurs événements. Le reste du monde n\'existe pas.',
+  metadataBase: new URL('https://monaura.fr'),
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'AURA' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'MonAura' },
   icons: {
     icon: '/icon-192.png',
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'AURA',
+    title: 'MonAura',
     description: 'Ton quartier, enfin vivant.',
     type: 'website',
   },

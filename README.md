@@ -1,9 +1,9 @@
-# 🗺️ AURA
+# 🗺️ MonAura
 
 > **Le réseau social de ton quartier.**
 > Ton aura de 500m est ton univers. Le reste du monde n'existe pas.
 
-AURA n'affiche que ce qui est dans ton rayon de 500m : tes voisins, leurs ventes, leurs services, leurs événements. Quand tu te déplaces, ton univers se déplace avec toi.
+MonAura n'affiche que ce qui est dans ton rayon de 500m : tes voisins, leurs ventes, leurs services, leurs événements. Quand tu te déplaces, ton univers se déplace avec toi.
 
 ## Les 6 idées que personne n'a faites à grande échelle
 
