@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 
@@ -219,11 +218,6 @@ export default function ConnexionPage() {
 
           <p className="text-center text-[11px] text-ink-700/40 mt-6">
             100% RGPD · Localisation chiffrée · Open-source
-          </p>
-          <p className="text-center mt-3">
-            <Link href="/" className="text-xs font-bold text-forest-600">
-              ← Explorer sans compte
-            </Link>
           </p>
         </div>
       </div>
