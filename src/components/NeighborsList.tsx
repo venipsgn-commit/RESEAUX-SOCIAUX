@@ -89,7 +89,7 @@ export function NeighborsList({ lat, lng, radius = 2000 }: { lat: number; lng: n
           <div className="text-4xl mb-2">🏘️</div>
           <p className="text-sm font-bold">Aucun voisin trouvé.</p>
           <p className="text-xs text-ink-700/55 mt-1">
-            Les voisins de démo sont autour de Bastille, Paris.
+            Personne dans ton rayon pour l&apos;instant.
           </p>
         </div>
       ) : (

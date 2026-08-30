@@ -34,7 +34,7 @@ export default function ComposePage() {
   const [geolockHint, setGeolockHint] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quartier, setQuartier] = useState('Bastille');
+  const [quartier, setQuartier] = useState('');
 
   useEffect(() => {
     setQuartier(getClientPosition().quartier.split(' · ')[0]);

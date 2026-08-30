@@ -137,9 +137,7 @@ export default async function VoisinagePage() {
               <div className="text-5xl mb-3">🏜️</div>
               <p className="font-bold">Aucune activité dans ton aura pour l&apos;instant.</p>
               <p className="text-sm text-ink-700/60 mt-1">
-                {pos.real
-                  ? 'Ton aura est calme — sois le premier à publier ! (Les voisins de démo sont autour de Bastille, Paris.)'
-                  : 'Sois le premier à publier quelque chose dans ton quartier !'}
+                Sois le premier à publier quelque chose dans ton quartier !
               </p>
               <Link
                 href={user ? '/compose' : '/connexion'}

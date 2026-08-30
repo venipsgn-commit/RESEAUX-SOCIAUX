@@ -77,7 +77,7 @@ export default async function MapPage() {
             <span className="text-base">{pos.real ? '📍' : '🧭'}</span>
             <div className="flex-1 min-w-0">
               <div className="text-[9px] uppercase tracking-wider font-bold text-ink-700/50">
-                {pos.real ? 'Tu es à' : 'Aperçu · démo'}
+                {pos.real ? 'Tu es à' : 'Position approximative'}
               </div>
               <div className="text-sm font-extrabold leading-tight truncate">{pos.quartier}</div>
             </div>
@@ -123,7 +123,7 @@ export default async function MapPage() {
             <div className="bg-cream-50/97 backdrop-blur-xl rounded-3xl p-4 shadow-lift text-center animate-fade-up">
               <div className="text-sm font-bold">Ton aura est calme 🍃</div>
               <div className="text-[11px] text-ink-700/60 mt-0.5">
-                Aucun voisin dans 500m. Les voisins de démo sont autour de Bastille.
+                Aucun voisin dans 500m pour l&apos;instant.
               </div>
             </div>
           </div>

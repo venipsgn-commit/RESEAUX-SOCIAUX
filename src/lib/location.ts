@@ -12,11 +12,11 @@ export type AuraPosition = {
   real: boolean;
 };
 
-// Fallback : Bastille, Paris 11ᵉ (là où sont les voisins de démo)
+// Fallback neutre (centre de Paris) tant que la vraie position GPS n'est pas connue.
 export const DEFAULT_POSITION: AuraPosition = {
-  lat: 48.8531,
-  lng: 2.3692,
-  quartier: 'Bastille · Paris 11ᵉ',
+  lat: 48.8566,
+  lng: 2.3522,
+  quartier: 'Ma zone',
   real: false,
 };
 

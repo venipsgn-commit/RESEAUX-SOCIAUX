@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AURA_POS_COOKIE,
-  DEFAULT_POSITION,
   serializePositionCookie,
   type AuraPosition,
 } from '@/lib/location';
@@ -111,12 +110,6 @@ export function LocationGate() {
     setStatus('hidden');
   }
 
-  function useDemo() {
-    writeCookie(DEFAULT_POSITION);
-    dismiss();
-    router.refresh();
-  }
-
   if (status === 'hidden' || status === 'granted') return null;
 
   return (
@@ -128,7 +121,7 @@ export function LocationGate() {
             <div className="font-extrabold text-sm">Active ta géolocalisation</div>
             <p className="text-xs text-cream-50/70 mt-0.5">
               {status === 'denied'
-                ? "Géolocalisation refusée. Tu peux explorer le quartier de démo (Bastille) en attendant."
+                ? "Géolocalisation refusée. Autorise l'accès à ta position dans les réglages de ton navigateur pour voir ton quartier."
                 : "Pour voir les voisins et annonces réellement autour de toi, autorise l'accès à ta position."}
             </p>
             <div className="flex gap-2 mt-3">
@@ -141,12 +134,6 @@ export function LocationGate() {
                   {status === 'asking' ? 'Localisation…' : 'Activer'}
                 </button>
               )}
-              <button
-                onClick={useDemo}
-                className="px-4 py-2 bg-cream-50/10 text-cream-50 rounded-full text-xs font-bold"
-              >
-                Explorer Bastille
-              </button>
               <button onClick={dismiss} className="px-2 py-2 text-cream-50/50 text-xs font-bold">
                 Plus tard
               </button>

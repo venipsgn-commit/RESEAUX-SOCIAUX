@@ -56,7 +56,7 @@ export function NewGroupForm() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         maxLength={50}
-        placeholder="Nom du groupe (ex : Voisins Bastille)"
+        placeholder="Nom du groupe (ex : Voisins du quartier)"
         className="w-full bg-surface rounded-2xl px-4 py-3 text-sm outline-none border border-ink-900/10 shadow-soft"
       />
 
