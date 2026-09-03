@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AURA_POS_COOKIE, serializePositionCookie, type AuraPosition } from '@/lib/location';
+import { toast } from '@/lib/toast';
 
 function writeCookie(pos: AuraPosition) {
   document.cookie = `${AURA_POS_COOKIE}=${serializePositionCookie(pos)}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
@@ -33,8 +34,23 @@ export function RelocateButton() {
   const [err, setErr] = useState(false);
 
   function relocate() {
+    // La géolocalisation exige un contexte sécurisé (HTTPS ou localhost).
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      setErr(true);
+      toast({
+        icon: '🔒',
+        title: 'Connexion non sécurisée',
+        text: 'La géolocalisation nécessite une connexion HTTPS.',
+      });
+      return;
+    }
     if (!('geolocation' in navigator)) {
       setErr(true);
+      toast({
+        icon: '🧭',
+        title: 'GPS indisponible',
+        text: 'Ton navigateur ne prend pas en charge la géolocalisation.',
+      });
       return;
     }
     setErr(false);
@@ -54,10 +70,37 @@ export function RelocateButton() {
         writeCookie({ ...provisional, quartier });
         router.refresh();
         setBusy(false);
+        toast({ icon: '📍', title: 'Position mise à jour', text: quartier });
       },
-      () => {
+      (e) => {
         setBusy(false);
         setErr(true);
+        // Message adapté au type d'erreur pour que l'utilisateur sache quoi faire.
+        if (e.code === e.PERMISSION_DENIED) {
+          toast({
+            icon: '🚫',
+            title: 'Localisation refusée',
+            text: "Autorise l'accès à ta position dans les réglages de ton navigateur, puis réessaie.",
+          });
+        } else if (e.code === e.POSITION_UNAVAILABLE) {
+          toast({
+            icon: '📡',
+            title: 'Position introuvable',
+            text: 'Impossible de te localiser pour le moment. Vérifie ta connexion ou le GPS.',
+          });
+        } else if (e.code === e.TIMEOUT) {
+          toast({
+            icon: '⏳',
+            title: 'Délai dépassé',
+            text: 'La localisation a pris trop de temps. Réessaie.',
+          });
+        } else {
+          toast({
+            icon: '🧭',
+            title: 'Localisation impossible',
+            text: 'Une erreur est survenue. Réessaie dans un instant.',
+          });
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
