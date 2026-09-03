@@ -51,7 +51,15 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
   const mapRef = useRef<import('leaflet').Map | null>(null);
   const LRef = useRef<typeof import('leaflet') | null>(null);
   const overlayRef = useRef<import('leaflet').LayerGroup | null>(null);
+  const youMarkerRef = useRef<import('leaflet').Marker | null>(null);
+  const auraCircleRef = useRef<import('leaflet').Circle | null>(null);
   const [mapReady, setMapReady] = useState(0);
+
+  // Position courante lue par l'init (créé une seule fois) sans le remettre en dépendance.
+  const centerRef = useRef(center);
+  const radiusRef = useRef(radiusM);
+  centerRef.current = center;
+  radiusRef.current = radiusM;
 
   async function sayHi(userId: string) {
     const {
@@ -75,7 +83,9 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
     }
   }
 
-  // Initialisation de la carte (une fois par position/rayon)
+  // Initialisation de la carte — UNE SEULE FOIS. Le recentrage lorsque la
+  // position change est géré par un effet séparé (setView), ce qui évite de
+  // détruire/recréer la carte à chaque mise à jour de position.
   useEffect(() => {
     if (!containerRef.current) return;
     let cancelled = false;
@@ -91,8 +101,9 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       }
       if (mapRef.current) return;
 
+      const start = centerRef.current;
       const map = L.map(el, {
-        center: [center.lat, center.lng],
+        center: [start.lat, start.lng],
         zoom: 16,
         minZoom: 2,
         zoomControl: false,
@@ -122,8 +133,8 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
       resizeObserver.observe(el);
 
-      const auraCircle = L.circle([center.lat, center.lng], {
-        radius: radiusM,
+      const auraCircle = L.circle([start.lat, start.lng], {
+        radius: radiusRef.current,
         color: '#2d5a3d',
         weight: 2,
         dashArray: '6 6',
@@ -131,6 +142,7 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
         fillColor: '#2d5a3d',
         fillOpacity: 0.08,
       }).addTo(map);
+      auraCircleRef.current = auraCircle;
 
       const youIcon = L.divIcon({
         className: '',
@@ -138,7 +150,10 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
         iconSize: [24, 24],
         iconAnchor: [12, 12],
       });
-      L.marker([center.lat, center.lng], { icon: youIcon, zIndexOffset: 1000 }).addTo(map);
+      youMarkerRef.current = L.marker([start.lat, start.lng], {
+        icon: youIcon,
+        zIndexOffset: 1000,
+      }).addTo(map);
 
       // Couche des marqueurs (posts + voisins), redessinée quand le filtre change
       overlayRef.current = L.layerGroup().addTo(map);
@@ -154,10 +169,28 @@ export function LiveMap({ center, radiusM, posts, people = [], className = '' }:
       mapRef.current?.remove();
       mapRef.current = null;
       overlayRef.current = null;
+      youMarkerRef.current = null;
+      auraCircleRef.current = null;
       setMapReady(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center.lat, center.lng, radiusM]);
+  }, []);
+
+  // Recentrage fiable quand la position (ou le rayon) change : on déplace la
+  // vue, le marqueur « toi » et le cercle d'aura, sans recréer la carte.
+  useEffect(() => {
+    const map = mapRef.current;
+    const you = youMarkerRef.current;
+    const circle = auraCircleRef.current;
+    if (!map || !you || !circle || !mapReady) return;
+
+    const ll: [number, number] = [center.lat, center.lng];
+    you.setLatLng(ll);
+    circle.setLatLng(ll);
+    circle.setRadius(radiusM);
+    map.fitBounds(circle.getBounds(), { padding: [40, 40], maxZoom: 16 });
+    map.invalidateSize();
+  }, [center.lat, center.lng, radiusM, mapReady]);
 
   // (Re)dessine les marqueurs quand posts/people changent (filtre) — sans
   // réinitialiser la carte.
