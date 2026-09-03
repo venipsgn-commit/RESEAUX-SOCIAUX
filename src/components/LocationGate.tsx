@@ -21,26 +21,17 @@ function coordsLabel(lat: number, lng: number): string {
 }
 
 /**
- * Reverse-geocoding via Nominatim (OpenStreetMap) pour obtenir le nom du
- * quartier. Gratuit, sans clé. En cas d'échec (réseau, quota), on retombe
- * sur les coordonnées.
+ * Reverse-geocoding pour obtenir le nom du quartier. Passe par notre route
+ * serveur `/api/reverse-geocode`, qui interroge Nominatim avec un User-Agent
+ * conforme (les appels navigateur directs sont bloqués/limités). En cas
+ * d'échec (réseau, quota), on retombe sur les coordonnées.
  */
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
-      { headers: { 'Accept-Language': 'fr' } },
-    );
+    const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
     if (!res.ok) throw new Error('geocode failed');
     const data = await res.json();
-    const a = data?.address ?? {};
-    const quartier =
-      a.neighbourhood || a.suburb || a.quarter || a.city_district || a.village || a.town;
-    const ville = a.city || a.town || a.municipality || a.county;
-    if (quartier && ville && quartier !== ville) return `${quartier} · ${ville}`;
-    if (quartier) return quartier;
-    if (ville) return ville;
-    return coordsLabel(lat, lng);
+    return typeof data?.label === 'string' && data.label ? data.label : coordsLabel(lat, lng);
   } catch {
     return coordsLabel(lat, lng);
   }

@@ -10,20 +10,15 @@ function writeCookie(pos: AuraPosition) {
 }
 
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const fallback = `Ma position · ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
-      { headers: { 'Accept-Language': 'fr' } },
-    );
+    // Passe par notre route serveur (User-Agent conforme Nominatim).
+    const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
     if (!res.ok) throw new Error('geocode');
     const data = await res.json();
-    const a = data?.address ?? {};
-    const quartier = a.neighbourhood || a.suburb || a.quarter || a.city_district || a.village || a.town;
-    const ville = a.city || a.town || a.municipality || a.county;
-    if (quartier && ville && quartier !== ville) return `${quartier} · ${ville}`;
-    return quartier || ville || `Ma position · ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+    return typeof data?.label === 'string' && data.label ? data.label : fallback;
   } catch {
-    return `Ma position · ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+    return fallback;
   }
 }
 
